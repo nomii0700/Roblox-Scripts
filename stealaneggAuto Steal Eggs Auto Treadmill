@@ -1,0 +1,218 @@
+-- Steal An Egg - Auto Farm & ESP Script
+-- Using Nomii_UI_Library
+
+-- Library ko require kar rahe hain (Local testing ke liye)
+-- Agar aap is script ko release kar rahe hain, toh require ki jagah loadstring use karein:
+-- local Library = loadstring(game:HttpGet("YOUR_UI_LIBRARY_RAW_LINK"))()
+local Library = require(script.Parent.Nomii_UI_Library)
+
+local Window = Library:CreateWindow({
+    GameName = "Steal An Egg",
+    Version = "v1.0.0"
+})
+
+-- Services
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
+local CoreGui = game:GetService("CoreGui")
+
+-- Variables
+local getgenv = getgenv or function() return _G end
+
+-- ==========================================
+-- TABS
+-- ==========================================
+local AutoTab = Window:CreateTab("Automation")
+local PlayerTab = Window:CreateTab("Player")
+local VisualsTab = Window:CreateTab("Visuals")
+
+-- ==========================================
+-- AUTOMATION TAB
+-- ==========================================
+local FarmSection = AutoTab:CreateSection("Farming")
+
+getgenv().AutoSteal = false
+FarmSection:CreateToggle({
+    Name = "Auto Steal Eggs",
+    UsePurple = false,
+    Callback = function(state)
+        getgenv().AutoSteal = state
+        if state then
+            task.spawn(function()
+                while getgenv().AutoSteal do
+                    task.wait(0.1)
+                    pcall(function()
+                        local char = LocalPlayer.Character
+                        if char and char:FindFirstChild("HumanoidRootPart") then
+                            -- NOTE: Yeh ek generic structure hai. Game ke actual eggs folder ka naam alag ho sakta hai.
+                            -- Jaise ke workspace.Eggs ya workspace.Map.Eggs
+                            local eggsFolder = workspace:FindFirstChild("Eggs") 
+                            if eggsFolder then
+                                for _, egg in pairs(eggsFolder:GetChildren()) do
+                                    if egg:IsA("BasePart") or egg:IsA("Model") then
+                                        -- Teleport to egg
+                                        char.HumanoidRootPart.CFrame = egg:GetPivot()
+                                        task.wait(0.2)
+                                        -- Fire ProximityPrompt ya firetouchinterest if it exists
+                                        local prompt = egg:FindFirstChildWhichIsA("ProximityPrompt", true)
+                                        if prompt then
+                                            fireproximityprompt(prompt)
+                                        elseif firetouchinterest and egg:IsA("BasePart") then
+                                            firetouchinterest(char.HumanoidRootPart, egg, 0)
+                                            task.wait(0.1)
+                                            firetouchinterest(char.HumanoidRootPart, egg, 1)
+                                        end
+                                        break -- Ek waqt me ek hi egg pakadna hai
+                                    end
+                                end
+                            end
+                        end
+                    end)
+                end
+            end)
+        end
+    end
+})
+
+getgenv().AutoTreadmill = false
+FarmSection:CreateToggle({
+    Name = "Auto Treadmill",
+    UsePurple = true,
+    Callback = function(state)
+        getgenv().AutoTreadmill = state
+        if state then
+            task.spawn(function()
+                while getgenv().AutoTreadmill do
+                    task.wait(0.5)
+                    pcall(function()
+                        -- NOTE: Replace "TreadmillEvent" with actual remote event path found via Dex Explorer
+                        local treadmillEvent = game:GetService("ReplicatedStorage"):FindFirstChild("TreadmillEvent", true)
+                        if treadmillEvent then
+                            treadmillEvent:FireServer()
+                        else
+                            -- Fallback: Teleport to physical treadmill
+                            local treadmill = workspace:FindFirstChild("Treadmills")
+                            if treadmill and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
+                                LocalPlayer.Character.HumanoidRootPart.CFrame = treadmill:GetChildren()[1].CFrame
+                            end
+                        end
+                    end)
+                end
+            end)
+        end
+    end
+})
+
+-- ==========================================
+-- PLAYER TAB
+-- ==========================================
+local MovementSection = PlayerTab:CreateSection("Movement")
+
+MovementSection:CreateSlider({
+    Name = "WalkSpeed",
+    Min = 16,
+    Max = 300,
+    Default = 16,
+    Suffix = " WS",
+    Callback = function(value)
+        pcall(function()
+            if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
+                LocalPlayer.Character.Humanoid.WalkSpeed = value
+            end
+        end)
+    end
+})
+
+MovementSection:CreateSlider({
+    Name = "JumpPower",
+    Min = 50,
+    Max = 300,
+    Default = 50,
+    Suffix = " JP",
+    Callback = function(value)
+        pcall(function()
+            if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
+                LocalPlayer.Character.Humanoid.UseJumpPower = true
+                LocalPlayer.Character.Humanoid.JumpPower = value
+            end
+        end)
+    end
+})
+
+getgenv().InfiniteJump = false
+MovementSection:CreateToggle({
+    Name = "Infinite Jump",
+    UsePurple = false,
+    Callback = function(state)
+        getgenv().InfiniteJump = state
+    end
+})
+
+UserInputService.JumpRequest:Connect(function()
+    if getgenv().InfiniteJump then
+        pcall(function()
+            if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
+                LocalPlayer.Character.Humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
+            end
+        end)
+    end
+end)
+
+-- ==========================================
+-- VISUALS (ESP) TAB
+-- ==========================================
+local ESPSection = VisualsTab:CreateSection("ESP Options")
+local ESPFolder = Instance.new("Folder")
+ESPFolder.Name = "EggESPFolder"
+-- CoreGui me store kar rahe hain taake hide rahe
+local success = pcall(function() ESPFolder.Parent = CoreGui end)
+if not success then ESPFolder.Parent = LocalPlayer:WaitForChild("PlayerGui") end
+
+getgenv().EggESP = false
+ESPSection:CreateToggle({
+    Name = "Egg ESP",
+    UsePurple = true,
+    Callback = function(state)
+        getgenv().EggESP = state
+        if state then
+            task.spawn(function()
+                while getgenv().EggESP do
+                    task.wait(1) -- Har second ESP update karega
+                    pcall(function()
+                        -- Purane ESP delete karein
+                        ESPFolder:ClearAllChildren()
+                        
+                        -- Naye eggs dhund kar ESP lagayein
+                        local eggsFolder = workspace:FindFirstChild("Eggs")
+                        if eggsFolder then
+                            for _, egg in pairs(eggsFolder:GetChildren()) do
+                                if egg:IsA("BasePart") or egg:IsA("Model") then
+                                    local bbg = Instance.new("BillboardGui")
+                                    bbg.Parent = ESPFolder
+                                    bbg.Adornee = egg:IsA("Model") and egg.PrimaryPart or egg
+                                    bbg.Size = UDim2.new(0, 100, 0, 30)
+                                    bbg.AlwaysOnTop = true
+                                    
+                                    local txt = Instance.new("TextLabel")
+                                    txt.Parent = bbg
+                                    txt.Size = UDim2.new(1, 0, 1, 0)
+                                    txt.BackgroundTransparency = 1
+                                    txt.Text = "Egg [ESP]"
+                                    txt.TextColor3 = Color3.fromRGB(0, 255, 255)
+                                    txt.TextStrokeTransparency = 0
+                                    txt.Font = Enum.Font.GothamBold
+                                    txt.TextSize = 14
+                                end
+                            end
+                        end
+                    end)
+                end
+            end)
+        else
+            -- ESP band karne par cleanup
+            ESPFolder:ClearAllChildren()
+        end
+    end
+})
