@@ -448,29 +448,41 @@ FarmSection:CreateToggle({
                     local success, err = pcall(function()
                         local char = LocalPlayer.Character
                         if char and char:FindFirstChild("HumanoidRootPart") then
-                            -- Dynamic Egg Finder
                             local foundEgg = false
-                            for _, obj in pairs(workspace:GetDescendants()) do
-                                if obj:IsA("ProximityPrompt") and (string.find(obj.ActionText:lower(), "steal") or string.find(obj.Parent.Name:lower(), "egg")) then
-                                    char.HumanoidRootPart.CFrame = obj.Parent:GetPivot()
-                                    task.wait(0.2)
-                                    fireproximityprompt(obj)
-                                    foundEgg = true
-                                    break
-                                elseif obj:IsA("BasePart") and string.find(obj.Name:lower(), "egg") and obj.Parent ~= char and not obj:IsDescendantOf(char) then
-                                    char.HumanoidRootPart.CFrame = obj.CFrame
-                                    task.wait(0.2)
-                                    if firetouchinterest then
-                                        firetouchinterest(char.HumanoidRootPart, obj, 0)
-                                        task.wait(0.1)
-                                        firetouchinterest(char.HumanoidRootPart, obj, 1)
-                                    end
-                                    foundEgg = true
-                                    break
+                            
+                            -- Lag se bachne ke liye sirf main folders scan karein
+                            local scanTargets = {workspace}
+                            for _, v in pairs(workspace:GetChildren()) do
+                                if v:IsA("Folder") or v:IsA("Model") then
+                                    table.insert(scanTargets, v)
                                 end
                             end
-                            if not foundEgg then
-                                warn("Koi Egg nahi mila! Game me Eggs ka naam 'Egg' nahi hai ya load nahi hue.")
+
+                            for _, target in ipairs(scanTargets) do
+                                for _, obj in ipairs(target:GetChildren()) do
+                                    if obj:IsA("BasePart") or obj:IsA("Model") then
+                                        local prompt = obj:FindFirstChildWhichIsA("ProximityPrompt", true)
+                                        if prompt and string.find(prompt.ActionText:lower(), "steal") then
+                                            -- Teleport a bit above the egg so we don't get stuck
+                                            char.HumanoidRootPart.CFrame = obj:GetPivot() + Vector3.new(0, 3, 0)
+                                            task.wait(0.2)
+                                            fireproximityprompt(prompt)
+                                            foundEgg = true
+                                            break
+                                        elseif string.find(obj.Name:lower(), "egg") and not obj:IsDescendantOf(char) then
+                                            char.HumanoidRootPart.CFrame = obj:GetPivot() + Vector3.new(0, 3, 0)
+                                            task.wait(0.2)
+                                            if firetouchinterest and obj:IsA("BasePart") then
+                                                firetouchinterest(char.HumanoidRootPart, obj, 0)
+                                                task.wait(0.1)
+                                                firetouchinterest(char.HumanoidRootPart, obj, 1)
+                                            end
+                                            foundEgg = true
+                                            break
+                                        end
+                                    end
+                                end
+                                if foundEgg then break end
                             end
                         end
                     end)
@@ -528,6 +540,9 @@ FarmSection:CreateToggle({
 -- PLAYER TAB
 local MovementSection = PlayerTab:CreateSection("Movement")
 
+getgenv().WalkSpeedValue = 16
+getgenv().JumpPowerValue = 50
+
 MovementSection:CreateSlider({
     Name = "WalkSpeed",
     Min = 16,
@@ -535,11 +550,7 @@ MovementSection:CreateSlider({
     Default = 16,
     Suffix = " WS",
     Callback = function(value)
-        pcall(function()
-            if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
-                LocalPlayer.Character.Humanoid.WalkSpeed = value
-            end
-        end)
+        getgenv().WalkSpeedValue = value
     end
 })
 
@@ -550,14 +561,25 @@ MovementSection:CreateSlider({
     Default = 50,
     Suffix = " JP",
     Callback = function(value)
-        pcall(function()
-            if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
-                LocalPlayer.Character.Humanoid.UseJumpPower = true
-                LocalPlayer.Character.Humanoid.JumpPower = value
-            end
-        end)
+        getgenv().JumpPowerValue = value
     end
 })
+
+-- Forcefully override speed and jump power every frame (bypasses game's anti-speed)
+RunService.Heartbeat:Connect(function()
+    pcall(function()
+        local char = LocalPlayer.Character
+        if char and char:FindFirstChild("Humanoid") then
+            if getgenv().WalkSpeedValue > 16 then
+                char.Humanoid.WalkSpeed = getgenv().WalkSpeedValue
+            end
+            if getgenv().JumpPowerValue > 50 then
+                char.Humanoid.UseJumpPower = true
+                char.Humanoid.JumpPower = getgenv().JumpPowerValue
+            end
+        end
+    end)
+end)
 
 getgenv().InfiniteJump = false
 MovementSection:CreateToggle({
