@@ -28,12 +28,12 @@ function Library:CreateWindow(config)
     local GameName = config.GameName or "Steal An Egg"
     local Version = config.Version or "v2.1.0"
     
-    if CoreGui:FindFirstChild("NomiiScriptsUI") then
-        CoreGui:FindFirstChild("NomiiScriptsUI"):Destroy()
+    if CoreGui:FindFirstChild("NewScriptsUI") then
+        CoreGui:FindFirstChild("NewScriptsUI"):Destroy()
     end
     
     local NomiiUI = Instance.new("ScreenGui")
-    NomiiUI.Name = "NomiiScriptsUI"
+    NomiiUI.Name = "NewScriptsUI"
     NomiiUI.Parent = CoreGui
     NomiiUI.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
     NomiiUI.ResetOnSpawn = false
@@ -90,7 +90,7 @@ function Library:CreateWindow(config)
     HeaderTitle.Position = UDim2.new(0, 20, 0, 18)
     HeaderTitle.Size = UDim2.new(0, 350, 0, 28)
     HeaderTitle.Font = Theme.Font
-    HeaderTitle.Text = "NOMII SCRIPTS <font color='#00e5ff'>["..Version.."]</font>"
+    HeaderTitle.Text = "NEW SCRIPT <font color='#00e5ff'>["..Version.."]</font>"
     HeaderTitle.TextColor3 = Theme.TextWhite
     HeaderTitle.TextSize = 20
     HeaderTitle.TextXAlignment = Enum.TextXAlignment.Left
@@ -594,27 +594,21 @@ FarmSection:CreateToggle({
         if state then
             task.spawn(function()
                 while getgenv().AutoTreadmill do
-                    task.wait(0.5)
+                    task.wait(0.1)
                     pcall(function()
                         local char = LocalPlayer.Character
                         if char and char:FindFirstChild("HumanoidRootPart") and char:FindFirstChildOfClass("Humanoid") then
-                            local hrp = char.HumanoidRootPart
-                            local hum = char:FindFirstChildOfClass("Humanoid")
                             local treadmill = nil
-                            
                             for _, obj in pairs(workspace:GetDescendants()) do
                                 if obj:IsA("BasePart") and string.find(obj.Name:lower(), "treadmill") then
                                     treadmill = obj
                                     break
                                 end
                             end
-                            
                             if treadmill then
-                                if (hrp.Position - treadmill.Position).Magnitude > 5 then
-                                    hrp.CFrame = treadmill.CFrame + Vector3.new(0, 3, 0)
-                                end
-                                -- Force walk forward to farm steps!
-                                hum:Move(treadmill.CFrame.LookVector, true)
+                                -- Teleport slightly above the treadmill and auto-run to farm steps!
+                                char.HumanoidRootPart.CFrame = treadmill.CFrame + Vector3.new(0, 3, 0)
+                                char:FindFirstChildOfClass("Humanoid"):Move(Vector3.new(0, 0, -1), true)
                             end
                         end
                     end)
@@ -800,9 +794,6 @@ RunService.Stepped:Connect(function()
 end)
 
 local camera = workspace.CurrentCamera
-local lastPulse = tick()
-local pulseDelay = 0.1 -- Simulates "tapping" to bypass rubberband
-
 RunService.RenderStepped:Connect(function(deltaTime)
     pcall(function()
         local char = LocalPlayer.Character
@@ -810,14 +801,13 @@ RunService.RenderStepped:Connect(function(deltaTime)
             local hrp = char.HumanoidRootPart
             local hum = char:FindFirstChildOfClass("Humanoid")
             
-            -- WalkSpeed Pulse Bypass (Simulates tapping keys)
+            -- WalkSpeed Bypass
             if getgenv().WalkSpeedValue > 16 and not getgenv().FlyEnabled then
-                hum.WalkSpeed = 16 -- Keep default to fool server
+                hum.WalkSpeed = getgenv().WalkSpeedValue
                 if hum.MoveDirection.Magnitude > 0 then
-                    if tick() - lastPulse > pulseDelay then
-                        hrp.CFrame = hrp.CFrame + (hum.MoveDirection * (getgenv().WalkSpeedValue / 10))
-                        lastPulse = tick()
-                    end
+                    local moveDir = hum.MoveDirection.Unit
+                    local targetVel = moveDir * getgenv().WalkSpeedValue
+                    hrp.AssemblyLinearVelocity = Vector3.new(targetVel.X, hrp.AssemblyLinearVelocity.Y, targetVel.Z)
                 end
             end
             
@@ -827,7 +817,7 @@ RunService.RenderStepped:Connect(function(deltaTime)
                 hum.JumpPower = getgenv().JumpPowerValue
             end
             
-            -- Fly / Floating Pulse Logic
+            -- Fly / Floating Logic
             if getgenv().FlyEnabled and hrp:FindFirstChild("NomiiFlyBV") and hrp:FindFirstChild("NomiiFlyBG") then
                 local bv = hrp.NomiiFlyBV
                 local bg = hrp.NomiiFlyBG
@@ -841,13 +831,10 @@ RunService.RenderStepped:Connect(function(deltaTime)
                 if UserInputService:IsKeyDown(Enum.KeyCode.LeftControl) then moveDir = moveDir - Vector3.new(0, 1, 0) end
                 
                 if moveDir.Magnitude > 0 then
-                    if tick() - lastPulse > pulseDelay then
-                        hrp.CFrame = hrp.CFrame + (moveDir.Unit * (getgenv().FlySpeed / 10))
-                        lastPulse = tick()
-                    end
+                    bv.Velocity = moveDir.Unit * getgenv().FlySpeed
+                else
+                    bv.Velocity = Vector3.zero
                 end
-                
-                bv.Velocity = Vector3.zero -- Rely on CFrame pulse for movement to bypass distance anti-cheat
                 bg.CFrame = camera.CFrame
                 hum.PlatformStand = true
             else
@@ -857,4 +844,4 @@ RunService.RenderStepped:Connect(function(deltaTime)
     end)
 end)
 
-print("NOMII SCRIPTS - Steal An Egg v2.2.0 (Fly + Treadmill Update) Loaded!")
+print("NEW SCRIPT - Steal An Egg v2.1.0 Loaded Successfully!")
