@@ -594,21 +594,27 @@ FarmSection:CreateToggle({
         if state then
             task.spawn(function()
                 while getgenv().AutoTreadmill do
-                    task.wait(0.1)
+                    task.wait(0.5)
                     pcall(function()
                         local char = LocalPlayer.Character
                         if char and char:FindFirstChild("HumanoidRootPart") and char:FindFirstChildOfClass("Humanoid") then
+                            local hrp = char.HumanoidRootPart
+                            local hum = char:FindFirstChildOfClass("Humanoid")
                             local treadmill = nil
+                            
                             for _, obj in pairs(workspace:GetDescendants()) do
                                 if obj:IsA("BasePart") and string.find(obj.Name:lower(), "treadmill") then
                                     treadmill = obj
                                     break
                                 end
                             end
+                            
                             if treadmill then
-                                -- Teleport slightly above the treadmill and auto-run to farm steps!
-                                char.HumanoidRootPart.CFrame = treadmill.CFrame + Vector3.new(0, 3, 0)
-                                char:FindFirstChildOfClass("Humanoid"):Move(Vector3.new(0, 0, -1), true)
+                                if (hrp.Position - treadmill.Position).Magnitude > 5 then
+                                    hrp.CFrame = treadmill.CFrame + Vector3.new(0, 3, 0)
+                                end
+                                -- Force walk forward to farm steps!
+                                hum:Move(treadmill.CFrame.LookVector, true)
                             end
                         end
                     end)
@@ -794,6 +800,9 @@ RunService.Stepped:Connect(function()
 end)
 
 local camera = workspace.CurrentCamera
+local lastPulse = tick()
+local pulseDelay = 0.1 -- Simulates "tapping" to bypass rubberband
+
 RunService.RenderStepped:Connect(function(deltaTime)
     pcall(function()
         local char = LocalPlayer.Character
@@ -801,13 +810,14 @@ RunService.RenderStepped:Connect(function(deltaTime)
             local hrp = char.HumanoidRootPart
             local hum = char:FindFirstChildOfClass("Humanoid")
             
-            -- WalkSpeed Bypass
+            -- WalkSpeed Pulse Bypass (Simulates tapping keys)
             if getgenv().WalkSpeedValue > 16 and not getgenv().FlyEnabled then
-                hum.WalkSpeed = getgenv().WalkSpeedValue
+                hum.WalkSpeed = 16 -- Keep default to fool server
                 if hum.MoveDirection.Magnitude > 0 then
-                    local moveDir = hum.MoveDirection.Unit
-                    local targetVel = moveDir * getgenv().WalkSpeedValue
-                    hrp.AssemblyLinearVelocity = Vector3.new(targetVel.X, hrp.AssemblyLinearVelocity.Y, targetVel.Z)
+                    if tick() - lastPulse > pulseDelay then
+                        hrp.CFrame = hrp.CFrame + (hum.MoveDirection * (getgenv().WalkSpeedValue / 10))
+                        lastPulse = tick()
+                    end
                 end
             end
             
@@ -817,7 +827,7 @@ RunService.RenderStepped:Connect(function(deltaTime)
                 hum.JumpPower = getgenv().JumpPowerValue
             end
             
-            -- Fly / Floating Logic
+            -- Fly / Floating Pulse Logic
             if getgenv().FlyEnabled and hrp:FindFirstChild("NomiiFlyBV") and hrp:FindFirstChild("NomiiFlyBG") then
                 local bv = hrp.NomiiFlyBV
                 local bg = hrp.NomiiFlyBG
@@ -831,10 +841,13 @@ RunService.RenderStepped:Connect(function(deltaTime)
                 if UserInputService:IsKeyDown(Enum.KeyCode.LeftControl) then moveDir = moveDir - Vector3.new(0, 1, 0) end
                 
                 if moveDir.Magnitude > 0 then
-                    bv.Velocity = moveDir.Unit * getgenv().FlySpeed
-                else
-                    bv.Velocity = Vector3.zero
+                    if tick() - lastPulse > pulseDelay then
+                        hrp.CFrame = hrp.CFrame + (moveDir.Unit * (getgenv().FlySpeed / 10))
+                        lastPulse = tick()
+                    end
                 end
+                
+                bv.Velocity = Vector3.zero -- Rely on CFrame pulse for movement to bypass distance anti-cheat
                 bg.CFrame = camera.CFrame
                 hum.PlatformStand = true
             else
