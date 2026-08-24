@@ -510,7 +510,6 @@ function Library:CreateWindow(config)
     end
     function WindowObj:SelectTab(tabObj)
         if tabObj and tabObj.Btn then
-            -- Trigger click event equivalent
             for _, t in pairs(self.Tabs) do
                 t.Content.Visible = false
                 t.Btn.BackgroundTransparency = 1
@@ -535,11 +534,13 @@ local LocalPlayer = Players.LocalPlayer
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local getgenv = getgenv or function() return _G end
 
-local ClientData, RouterClient
+local Fsys, ClientData, RouterClient
 pcall(function()
-    local Fsys = require(ReplicatedStorage.ClientModules.Core.ClientData)
-    RouterClient = require(ReplicatedStorage.ClientModules.Core.InteriorsM.RouterClient)
-    ClientData = require(ReplicatedStorage.ClientModules.Core.ClientData)
+    if ReplicatedStorage:FindFirstChild("Fsys") then
+        Fsys = require(ReplicatedStorage.Fsys)
+        ClientData = Fsys.load("ClientData")
+        RouterClient = Fsys.load("RouterClient")
+    end
 end)
 
 local function SafeInvoke(remoteName, ...)
@@ -604,6 +605,7 @@ MainFeatures:CreateToggle({
     Callback = function(state)
         getgenv().AdoptAutoFarm = state
         if state then
+            -- Note: TeamAPI/ChooseTeam might be different, let's keep it safe.
             SafeInvoke("TeamAPI/ChooseTeam", "Babies", true)
             task.spawn(function()
                 while getgenv().AdoptAutoFarm do
