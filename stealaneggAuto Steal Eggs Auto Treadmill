@@ -40,8 +40,8 @@ function Library:CreateWindow(config)
     MainFrame.Name = "MainFrame"
     MainFrame.Parent = NomiiUI
     MainFrame.BackgroundColor3 = Theme.Background
-    MainFrame.Position = UDim2.new(0.5, -350, 0.5, -250)
-    MainFrame.Size = UDim2.new(0, 750, 0, 500)
+    MainFrame.Position = UDim2.new(0.5, -300, 0.5, -200)
+    MainFrame.Size = UDim2.new(0, 600, 0, 400) -- Chota Size
     MainFrame.ClipsDescendants = true
     MainFrame.BorderSizePixel = 0
     
@@ -112,6 +112,21 @@ function Library:CreateWindow(config)
     HeaderSubtitle.TextSize = 13
     HeaderSubtitle.TextXAlignment = Enum.TextXAlignment.Left
     HeaderSubtitle.RichText = true
+    
+    -- Close Button Add Kiya
+    local CloseBtn = Instance.new("TextButton")
+    CloseBtn.Name = "CloseBtn"
+    CloseBtn.Parent = MainFrame
+    CloseBtn.BackgroundTransparency = 1
+    CloseBtn.Position = UDim2.new(1, -40, 0, 15)
+    CloseBtn.Size = UDim2.new(0, 25, 0, 25)
+    CloseBtn.Font = Theme.Font
+    CloseBtn.Text = "X"
+    CloseBtn.TextColor3 = Theme.TextGray
+    CloseBtn.TextSize = 18
+    CloseBtn.MouseButton1Click:Connect(function()
+        NomiiUI:Destroy()
+    end)
     
     local Sidebar = Instance.new("Frame")
     Sidebar.Name = "Sidebar"
@@ -430,31 +445,36 @@ FarmSection:CreateToggle({
             task.spawn(function()
                 while getgenv().AutoSteal do
                     task.wait(0.1)
-                    pcall(function()
+                    local success, err = pcall(function()
                         local char = LocalPlayer.Character
                         if char and char:FindFirstChild("HumanoidRootPart") then
-                            local eggsFolder = workspace:FindFirstChild("Eggs") 
-                            if eggsFolder then
-                                for _, egg in pairs(eggsFolder:GetChildren()) do
-                                    if egg:IsA("BasePart") or egg:IsA("Model") then
-                                        -- Teleport
-                                        char.HumanoidRootPart.CFrame = egg:GetPivot()
-                                        task.wait(0.2)
-                                        -- Fire events
-                                        local prompt = egg:FindFirstChildWhichIsA("ProximityPrompt", true)
-                                        if prompt then
-                                            fireproximityprompt(prompt)
-                                        elseif firetouchinterest and egg:IsA("BasePart") then
-                                            firetouchinterest(char.HumanoidRootPart, egg, 0)
-                                            task.wait(0.1)
-                                            firetouchinterest(char.HumanoidRootPart, egg, 1)
-                                        end
-                                        break
+                            -- Dynamic Egg Finder
+                            local foundEgg = false
+                            for _, obj in pairs(workspace:GetDescendants()) do
+                                if obj:IsA("ProximityPrompt") and (string.find(obj.ActionText:lower(), "steal") or string.find(obj.Parent.Name:lower(), "egg")) then
+                                    char.HumanoidRootPart.CFrame = obj.Parent:GetPivot()
+                                    task.wait(0.2)
+                                    fireproximityprompt(obj)
+                                    foundEgg = true
+                                    break
+                                elseif obj:IsA("BasePart") and string.find(obj.Name:lower(), "egg") and obj.Parent ~= char and not obj:IsDescendantOf(char) then
+                                    char.HumanoidRootPart.CFrame = obj.CFrame
+                                    task.wait(0.2)
+                                    if firetouchinterest then
+                                        firetouchinterest(char.HumanoidRootPart, obj, 0)
+                                        task.wait(0.1)
+                                        firetouchinterest(char.HumanoidRootPart, obj, 1)
                                     end
+                                    foundEgg = true
+                                    break
                                 end
+                            end
+                            if not foundEgg then
+                                warn("Koi Egg nahi mila! Game me Eggs ka naam 'Egg' nahi hai ya load nahi hue.")
                             end
                         end
                     end)
+                    if not success then warn("AutoSteal Error:", err) end
                 end
             end)
         end
@@ -471,17 +491,34 @@ FarmSection:CreateToggle({
             task.spawn(function()
                 while getgenv().AutoTreadmill do
                     task.wait(0.5)
-                    pcall(function()
-                        local treadmillEvent = game:GetService("ReplicatedStorage"):FindFirstChild("TreadmillEvent", true)
+                    local success, err = pcall(function()
+                        local treadmillEvent = nil
+                        for _, v in pairs(game:GetService("ReplicatedStorage"):GetDescendants()) do
+                            if v:IsA("RemoteEvent") and string.find(v.Name:lower(), "treadmill") then
+                                treadmillEvent = v
+                                break
+                            end
+                        end
+                        
                         if treadmillEvent then
                             treadmillEvent:FireServer()
                         else
-                            local treadmill = workspace:FindFirstChild("Treadmills")
-                            if treadmill and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
-                                LocalPlayer.Character.HumanoidRootPart.CFrame = treadmill:GetChildren()[1].CFrame
+                            local foundTreadmill = false
+                            for _, obj in pairs(workspace:GetDescendants()) do
+                                if obj:IsA("BasePart") and string.find(obj.Name:lower(), "treadmill") then
+                                    if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
+                                        LocalPlayer.Character.HumanoidRootPart.CFrame = obj.CFrame
+                                        foundTreadmill = true
+                                        break
+                                    end
+                                end
+                            end
+                            if not foundTreadmill then
+                                warn("Treadmill Remote ya Treadmills parts workspace me nahi mile!")
                             end
                         end
                     end)
+                    if not success then warn("AutoTreadmill Error:", err) end
                 end
             end)
         end
@@ -560,26 +597,23 @@ ESPSection:CreateToggle({
                     task.wait(1)
                     pcall(function()
                         ESPFolder:ClearAllChildren()
-                        local eggsFolder = workspace:FindFirstChild("Eggs")
-                        if eggsFolder then
-                            for _, egg in pairs(eggsFolder:GetChildren()) do
-                                if egg:IsA("BasePart") or egg:IsA("Model") then
-                                    local bbg = Instance.new("BillboardGui")
-                                    bbg.Parent = ESPFolder
-                                    bbg.Adornee = egg:IsA("Model") and egg.PrimaryPart or egg
-                                    bbg.Size = UDim2.new(0, 100, 0, 30)
-                                    bbg.AlwaysOnTop = true
-                                    
-                                    local txt = Instance.new("TextLabel")
-                                    txt.Parent = bbg
-                                    txt.Size = UDim2.new(1, 0, 1, 0)
-                                    txt.BackgroundTransparency = 1
-                                    txt.Text = "Egg [ESP]"
-                                    txt.TextColor3 = Color3.fromRGB(0, 255, 255)
-                                    txt.TextStrokeTransparency = 0
-                                    txt.Font = Enum.Font.GothamBold
-                                    txt.TextSize = 14
-                                end
+                        for _, obj in pairs(workspace:GetDescendants()) do
+                            if obj:IsA("BasePart") and string.find(obj.Name:lower(), "egg") and not obj:IsDescendantOf(LocalPlayer.Character) then
+                                local bbg = Instance.new("BillboardGui")
+                                bbg.Parent = ESPFolder
+                                bbg.Adornee = obj
+                                bbg.Size = UDim2.new(0, 100, 0, 30)
+                                bbg.AlwaysOnTop = true
+                                
+                                local txt = Instance.new("TextLabel")
+                                txt.Parent = bbg
+                                txt.Size = UDim2.new(1, 0, 1, 0)
+                                txt.BackgroundTransparency = 1
+                                txt.Text = "Egg [ESP]"
+                                txt.TextColor3 = Color3.fromRGB(0, 255, 255)
+                                txt.TextStrokeTransparency = 0
+                                txt.Font = Enum.Font.GothamBold
+                                txt.TextSize = 14
                             end
                         end
                     end)
