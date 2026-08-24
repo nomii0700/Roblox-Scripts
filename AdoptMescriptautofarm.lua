@@ -291,7 +291,7 @@ function Library:CreateWindow(config)
             function Section:CreateToggle(tConfig)
                 local tName = tConfig.Name or "Toggle"
                 local tSub = tConfig.Subtitle or tConfig.Description or ""
-                local tDefault = (tConfig.Default == true)
+                local tDefault = (tConfig.Default == true) -- Defaults to false unless explicitly true
                 local tCallback = tConfig.Callback or function() end
                 local tState = tDefault
                 
@@ -370,6 +370,7 @@ function Library:CreateWindow(config)
                     tCallback(tState)
                 end)
                 
+                -- Trigger callback if default is set to true on load
                 if tDefault then
                     task.spawn(function()
                         tCallback(true)
