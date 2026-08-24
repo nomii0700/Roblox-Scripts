@@ -1,6 +1,8 @@
 -- ============================================================
--- Nomii Scripts UI Library
+-- NOMII SCRIPTS - STEAL AN EGG (ALL-IN-ONE MERGED EDITION)
+-- Features: Main Page Dashboard, Velocity Speed Bypass, Anti-Touch Kill Lasers Bypass, Elevated Safe Auto-Steal
 -- ============================================================
+
 local Library = {}
 local success, CoreGui = pcall(function() return game:GetService("CoreGui") end)
 if not success or not CoreGui then
@@ -10,12 +12,13 @@ local TweenService = game:GetService("TweenService")
 local UserInputService = game:GetService("UserInputService")
 
 local Theme = {
-    Background = Color3.fromRGB(28, 30, 36),
-    Sidebar = Color3.fromRGB(28, 30, 36),
-    SectionBackground = Color3.fromRGB(38, 41, 49),
+    Background = Color3.fromRGB(24, 26, 32),
+    Sidebar = Color3.fromRGB(24, 26, 32),
+    SectionBackground = Color3.fromRGB(34, 37, 45),
     AccentCyan = Color3.fromRGB(0, 229, 255),
     AccentPurple = Color3.fromRGB(157, 78, 221),
-    TextWhite = Color3.fromRGB(240, 240, 240),
+    AccentGreen = Color3.fromRGB(0, 230, 118),
+    TextWhite = Color3.fromRGB(245, 245, 245),
     TextGray = Color3.fromRGB(170, 175, 185),
     Font = Enum.Font.GothamBold,
     RegularFont = Enum.Font.Gotham
@@ -23,8 +26,8 @@ local Theme = {
 
 function Library:CreateWindow(config)
     config = config or {}
-    local GameName = config.GameName or "Unknown Game"
-    local Version = config.Version or "v1.0.0"
+    local GameName = config.GameName or "Steal An Egg"
+    local Version = config.Version or "v2.0.0"
     
     if CoreGui:FindFirstChild("NomiiScriptsUI") then
         CoreGui:FindFirstChild("NomiiScriptsUI"):Destroy()
@@ -40,15 +43,22 @@ function Library:CreateWindow(config)
     MainFrame.Name = "MainFrame"
     MainFrame.Parent = NomiiUI
     MainFrame.BackgroundColor3 = Theme.Background
-    MainFrame.Position = UDim2.new(0.5, -300, 0.5, -200)
-    MainFrame.Size = UDim2.new(0, 600, 0, 400) -- Chota Size
+    MainFrame.Position = UDim2.new(0.5, -340, 0.5, -240)
+    MainFrame.Size = UDim2.new(0, 680, 0, 480)
     MainFrame.ClipsDescendants = true
     MainFrame.BorderSizePixel = 0
     
     local UICorner = Instance.new("UICorner")
-    UICorner.CornerRadius = UDim.new(0, 10)
+    UICorner.CornerRadius = UDim.new(0, 12)
     UICorner.Parent = MainFrame
     
+    local MainStroke = Instance.new("UIStroke")
+    MainStroke.Parent = MainFrame
+    MainStroke.Color = Theme.AccentCyan
+    MainStroke.Transparency = 0.8
+    MainStroke.Thickness = 1
+    
+    -- Dragging Logic
     local dragging, dragInput, dragStart, startPos
     MainFrame.InputBegan:Connect(function(input)
         if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
@@ -74,80 +84,73 @@ function Library:CreateWindow(config)
         end
     end)
 
-    local LogoImage = Instance.new("ImageLabel")
-    LogoImage.Name = "Logo"
-    LogoImage.Parent = MainFrame
-    LogoImage.BackgroundTransparency = 1
-    LogoImage.Position = UDim2.new(0, 20, 0, 18)
-    LogoImage.Size = UDim2.new(0, 45, 0, 45)
-    LogoImage.Image = "rbxassetid://1234567890" 
-    LogoImage.ScaleType = Enum.ScaleType.Fit
-    
+    -- Header
     local HeaderTitle = Instance.new("TextLabel")
     HeaderTitle.Parent = MainFrame
     HeaderTitle.BackgroundTransparency = 1
-    HeaderTitle.Position = UDim2.new(0, 75, 0, 20)
-    HeaderTitle.Size = UDim2.new(0, 300, 0, 30)
+    HeaderTitle.Position = UDim2.new(0, 20, 0, 18)
+    HeaderTitle.Size = UDim2.new(0, 350, 0, 28)
     HeaderTitle.Font = Theme.Font
-    HeaderTitle.Text = "NOMII SCRIPTS <font color='#00e5ff'>CONNECTED ["..Version.."]</font>"
+    HeaderTitle.Text = "NOMII SCRIPTS <font color='#00e5ff'>["..Version.."]</font>"
     HeaderTitle.TextColor3 = Theme.TextWhite
-    HeaderTitle.TextSize = 22
+    HeaderTitle.TextSize = 20
     HeaderTitle.TextXAlignment = Enum.TextXAlignment.Left
     HeaderTitle.RichText = true
-    
-    local TitleGlow = Instance.new("UIStroke")
-    TitleGlow.Parent = HeaderTitle
-    TitleGlow.Color = Theme.AccentCyan
-    TitleGlow.Transparency = 0.6
-    TitleGlow.Thickness = 1
     
     local HeaderSubtitle = Instance.new("TextLabel")
     HeaderSubtitle.Parent = MainFrame
     HeaderSubtitle.BackgroundTransparency = 1
-    HeaderSubtitle.Position = UDim2.new(0, 75, 0, 48)
-    HeaderSubtitle.Size = UDim2.new(0, 300, 0, 20)
+    HeaderSubtitle.Position = UDim2.new(0, 20, 0, 44)
+    HeaderSubtitle.Size = UDim2.new(0, 350, 0, 18)
     HeaderSubtitle.Font = Theme.RegularFont
-    HeaderSubtitle.Text = GameName:upper()
-    HeaderSubtitle.TextColor3 = Theme.TextGray
-    HeaderSubtitle.TextSize = 13
+    HeaderSubtitle.Text = GameName:upper() .. " - ALL CONTROLS DASHBOARD"
+    HeaderSubtitle.TextColor3 = Theme.AccentCyan
+    HeaderSubtitle.TextSize = 12
     HeaderSubtitle.TextXAlignment = Enum.TextXAlignment.Left
     HeaderSubtitle.RichText = true
     
-    -- Close Button Add Kiya
+    -- Close Button (X)
     local CloseBtn = Instance.new("TextButton")
     CloseBtn.Name = "CloseBtn"
     CloseBtn.Parent = MainFrame
-    CloseBtn.BackgroundTransparency = 1
-    CloseBtn.Position = UDim2.new(1, -40, 0, 15)
-    CloseBtn.Size = UDim2.new(0, 25, 0, 25)
+    CloseBtn.BackgroundColor3 = Color3.fromRGB(220, 50, 50)
+    CloseBtn.Position = UDim2.new(1, -38, 0, 18)
+    CloseBtn.Size = UDim2.new(0, 22, 0, 22)
     CloseBtn.Font = Theme.Font
     CloseBtn.Text = "X"
-    CloseBtn.TextColor3 = Theme.TextGray
-    CloseBtn.TextSize = 18
+    CloseBtn.TextColor3 = Theme.TextWhite
+    CloseBtn.TextSize = 13
+    CloseBtn.AutoButtonColor = true
+    
+    local CloseCorner = Instance.new("UICorner")
+    CloseCorner.CornerRadius = UDim.new(0, 6)
+    CloseCorner.Parent = CloseBtn
+    
     CloseBtn.MouseButton1Click:Connect(function()
         NomiiUI:Destroy()
     end)
     
+    -- Sidebar (Navigation)
     local Sidebar = Instance.new("Frame")
     Sidebar.Name = "Sidebar"
     Sidebar.Parent = MainFrame
     Sidebar.BackgroundColor3 = Theme.Sidebar
-    Sidebar.Position = UDim2.new(0, 20, 0, 90)
-    Sidebar.Size = UDim2.new(0, 160, 1, -110)
+    Sidebar.Position = UDim2.new(0, 18, 0, 75)
+    Sidebar.Size = UDim2.new(0, 150, 1, -90)
     Sidebar.BackgroundTransparency = 1
     
     local SidebarLayout = Instance.new("UIListLayout")
     SidebarLayout.Parent = Sidebar
     SidebarLayout.SortOrder = Enum.SortOrder.LayoutOrder
     SidebarLayout.Padding = UDim.new(0, 8)
-    SidebarLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
     
+    -- Content Container (Main Dashboard Scroll Area)
     local ContentContainer = Instance.new("Frame")
     ContentContainer.Name = "ContentContainer"
     ContentContainer.Parent = MainFrame
     ContentContainer.BackgroundTransparency = 1
-    ContentContainer.Position = UDim2.new(0, 200, 0, 90)
-    ContentContainer.Size = UDim2.new(1, -220, 1, -110)
+    ContentContainer.Position = UDim2.new(0, 180, 0, 75)
+    ContentContainer.Size = UDim2.new(1, -198, 1, -90)
     
     local Window = { Tabs = {}, CurrentTab = nil }
     
@@ -156,11 +159,11 @@ function Library:CreateWindow(config)
         TabBtn.Name = tabName.."_Btn"
         TabBtn.Parent = Sidebar
         TabBtn.BackgroundColor3 = Theme.SectionBackground
-        TabBtn.Size = UDim2.new(1, 0, 0, 42)
+        TabBtn.Size = UDim2.new(1, 0, 0, 40)
         TabBtn.Font = Theme.Font
-        TabBtn.Text = "    " .. tabName:upper()
+        TabBtn.Text = "   " .. tabName:upper()
         TabBtn.TextColor3 = Theme.TextGray
-        TabBtn.TextSize = 14
+        TabBtn.TextSize = 13
         TabBtn.TextXAlignment = Enum.TextXAlignment.Left
         TabBtn.AutoButtonColor = false
         
@@ -171,7 +174,7 @@ function Library:CreateWindow(config)
         local Indicator = Instance.new("Frame")
         Indicator.Parent = TabBtn
         Indicator.BackgroundColor3 = Theme.AccentCyan
-        Indicator.Position = UDim2.new(0, 0, 0, 11)
+        Indicator.Position = UDim2.new(0, 0, 0, 10)
         Indicator.Size = UDim2.new(0, 4, 0, 20)
         Indicator.BorderSizePixel = 0
         Indicator.BackgroundTransparency = 1
@@ -185,7 +188,8 @@ function Library:CreateWindow(config)
         TabContent.Parent = ContentContainer
         TabContent.BackgroundTransparency = 1
         TabContent.Size = UDim2.new(1, 0, 1, 0)
-        TabContent.ScrollBarThickness = 0
+        TabContent.ScrollBarThickness = 4
+        TabContent.ScrollBarImageColor3 = Theme.AccentCyan
         TabContent.Visible = false
         TabContent.CanvasSize = UDim2.new(0, 0, 0, 0)
         TabContent.AutomaticCanvasSize = Enum.AutomaticSize.Y
@@ -193,8 +197,8 @@ function Library:CreateWindow(config)
         local ContentLayout = Instance.new("UIGridLayout")
         ContentLayout.Parent = TabContent
         ContentLayout.SortOrder = Enum.SortOrder.LayoutOrder
-        ContentLayout.CellPadding = UDim2.new(0, 15, 0, 15)
-        ContentLayout.CellSize = UDim2.new(0, 250, 0, 230)
+        ContentLayout.CellPadding = UDim2.new(0, 12, 0, 12)
+        ContentLayout.CellSize = UDim2.new(0, 230, 0, 250)
         
         TabBtn.MouseButton1Click:Connect(function()
             for _, t in pairs(Window.Tabs) do
@@ -229,24 +233,24 @@ function Library:CreateWindow(config)
             local SecTitle = Instance.new("TextLabel")
             SecTitle.Parent = SectionFrame
             SecTitle.BackgroundTransparency = 1
-            SecTitle.Position = UDim2.new(0, 15, 0, 15)
-            SecTitle.Size = UDim2.new(1, -30, 0, 20)
+            SecTitle.Position = UDim2.new(0, 12, 0, 12)
+            SecTitle.Size = UDim2.new(1, -24, 0, 20)
             SecTitle.Font = Theme.Font
             SecTitle.Text = sectionName:upper()
             SecTitle.TextColor3 = Theme.TextWhite
-            SecTitle.TextSize = 16
+            SecTitle.TextSize = 14
             SecTitle.TextXAlignment = Enum.TextXAlignment.Left
             
             local ItemContainer = Instance.new("Frame")
             ItemContainer.Parent = SectionFrame
             ItemContainer.BackgroundTransparency = 1
-            ItemContainer.Position = UDim2.new(0, 15, 0, 45)
-            ItemContainer.Size = UDim2.new(1, -30, 1, -55)
+            ItemContainer.Position = UDim2.new(0, 12, 0, 38)
+            ItemContainer.Size = UDim2.new(1, -24, 1, -48)
             
             local ItemLayout = Instance.new("UIListLayout")
             ItemLayout.Parent = ItemContainer
             ItemLayout.SortOrder = Enum.SortOrder.LayoutOrder
-            ItemLayout.Padding = UDim.new(0, 12)
+            ItemLayout.Padding = UDim.new(0, 10)
             
             local Section = {}
             
@@ -254,30 +258,30 @@ function Library:CreateWindow(config)
                 local tName = tConfig.Name or "Toggle"
                 local tCallback = tConfig.Callback or function() end
                 local isPurple = tConfig.UsePurple or false
-                local tState = false
+                local tState = tConfig.Default or false
                 
                 local ActiveColor = isPurple and Theme.AccentPurple or Theme.AccentCyan
                 
                 local ToggleFrame = Instance.new("Frame")
                 ToggleFrame.Parent = ItemContainer
                 ToggleFrame.BackgroundTransparency = 1
-                ToggleFrame.Size = UDim2.new(1, 0, 0, 28)
+                ToggleFrame.Size = UDim2.new(1, 0, 0, 26)
                 
                 local TTitle = Instance.new("TextLabel")
                 TTitle.Parent = ToggleFrame
                 TTitle.BackgroundTransparency = 1
-                TTitle.Size = UDim2.new(1, -50, 1, 0)
+                TTitle.Size = UDim2.new(1, -46, 1, 0)
                 TTitle.Font = Theme.RegularFont
                 TTitle.Text = tName
                 TTitle.TextColor3 = Theme.TextWhite
-                TTitle.TextSize = 14
+                TTitle.TextSize = 12
                 TTitle.TextXAlignment = Enum.TextXAlignment.Left
                 
                 local TBtn = Instance.new("TextButton")
                 TBtn.Parent = ToggleFrame
-                TBtn.BackgroundColor3 = Theme.Background
-                TBtn.Position = UDim2.new(1, -44, 0.5, -11)
-                TBtn.Size = UDim2.new(0, 44, 0, 22)
+                TBtn.BackgroundColor3 = tState and ActiveColor or Theme.Background
+                TBtn.Position = UDim2.new(1, -42, 0.5, -10)
+                TBtn.Size = UDim2.new(0, 42, 0, 20)
                 TBtn.Text = ""
                 TBtn.AutoButtonColor = false
                 
@@ -287,9 +291,9 @@ function Library:CreateWindow(config)
                 
                 local TCircle = Instance.new("Frame")
                 TCircle.Parent = TBtn
-                TCircle.BackgroundColor3 = Theme.TextGray
-                TCircle.Position = UDim2.new(0, 3, 0.5, -8)
-                TCircle.Size = UDim2.new(0, 16, 0, 16)
+                TCircle.BackgroundColor3 = tState and Theme.Background or Theme.TextGray
+                TCircle.Position = tState and UDim2.new(1, -18, 0.5, -7) or UDim2.new(0, 3, 0.5, -7)
+                TCircle.Size = UDim2.new(0, 14, 0, 14)
                 
                 local CircleCorner = Instance.new("UICorner")
                 CircleCorner.CornerRadius = UDim.new(1, 0)
@@ -298,14 +302,17 @@ function Library:CreateWindow(config)
                 TBtn.MouseButton1Click:Connect(function()
                     tState = not tState
                     if tState then
-                        TweenService:Create(TCircle, TweenInfo.new(0.2), {Position = UDim2.new(1, -19, 0.5, -8), BackgroundColor3 = Theme.Background}):Play()
-                        TweenService:Create(TBtn, TweenInfo.new(0.2), {BackgroundColor3 = ActiveColor}):Play()
+                        TweenService:Create(TCircle, TweenInfo.new(0.18), {Position = UDim2.new(1, -18, 0.5, -7), BackgroundColor3 = Theme.Background}):Play()
+                        TweenService:Create(TBtn, TweenInfo.new(0.18), {BackgroundColor3 = ActiveColor}):Play()
                     else
-                        TweenService:Create(TCircle, TweenInfo.new(0.2), {Position = UDim2.new(0, 3, 0.5, -8), BackgroundColor3 = Theme.TextGray}):Play()
-                        TweenService:Create(TBtn, TweenInfo.new(0.2), {BackgroundColor3 = Theme.Background}):Play()
+                        TweenService:Create(TCircle, TweenInfo.new(0.18), {Position = UDim2.new(0, 3, 0.5, -7), BackgroundColor3 = Theme.TextGray}):Play()
+                        TweenService:Create(TBtn, TweenInfo.new(0.18), {BackgroundColor3 = Theme.Background}):Play()
                     end
                     tCallback(tState)
                 end)
+                
+                -- Execute initial default callback if true
+                if tConfig.Default then tCallback(true) end
             end
             
             function Section:CreateSlider(sConfig)
@@ -319,33 +326,33 @@ function Library:CreateWindow(config)
                 local SliderFrame = Instance.new("Frame")
                 SliderFrame.Parent = ItemContainer
                 SliderFrame.BackgroundTransparency = 1
-                SliderFrame.Size = UDim2.new(1, 0, 0, 40)
+                SliderFrame.Size = UDim2.new(1, 0, 0, 38)
                 
                 local STitle = Instance.new("TextLabel")
                 STitle.Parent = SliderFrame
                 STitle.BackgroundTransparency = 1
-                STitle.Size = UDim2.new(1, -40, 0, 15)
+                STitle.Size = UDim2.new(1, -40, 0, 14)
                 STitle.Font = Theme.RegularFont
                 STitle.Text = sName
                 STitle.TextColor3 = Theme.TextWhite
-                STitle.TextSize = 13
+                STitle.TextSize = 12
                 STitle.TextXAlignment = Enum.TextXAlignment.Left
                 
                 local SVal = Instance.new("TextLabel")
                 SVal.Parent = SliderFrame
                 SVal.BackgroundTransparency = 1
-                SVal.Position = UDim2.new(1, -50, 0, 0)
-                SVal.Size = UDim2.new(0, 50, 0, 15)
+                SVal.Position = UDim2.new(1, -45, 0, 0)
+                SVal.Size = UDim2.new(0, 45, 0, 14)
                 SVal.Font = Theme.RegularFont
                 SVal.Text = tostring(sDef) .. sSuffix
                 SVal.TextColor3 = Theme.TextGray
-                SVal.TextSize = 13
+                SVal.TextSize = 12
                 SVal.TextXAlignment = Enum.TextXAlignment.Right
                 
                 local SBarBg = Instance.new("Frame")
                 SBarBg.Parent = SliderFrame
                 SBarBg.BackgroundColor3 = Theme.Background
-                SBarBg.Position = UDim2.new(0, 0, 0, 25)
+                SBarBg.Position = UDim2.new(0, 0, 0, 22)
                 SBarBg.Size = UDim2.new(1, 0, 0, 6)
                 SBarBg.BorderSizePixel = 0
                 
@@ -365,9 +372,9 @@ function Library:CreateWindow(config)
                 
                 local SBtn = Instance.new("TextButton")
                 SBtn.Parent = SBarBg
-                SBtn.BackgroundColor3 = Theme.TextGray
-                SBtn.Position = UDim2.new((sDef-sMin)/(sMax-sMin), -6, 0.5, -6)
-                SBtn.Size = UDim2.new(0, 12, 0, 12)
+                SBtn.BackgroundColor3 = Theme.TextWhite
+                SBtn.Position = UDim2.new((sDef-sMin)/(sMax-sMin), -5, 0.5, -5)
+                SBtn.Size = UDim2.new(0, 10, 0, 10)
                 SBtn.Text = ""
                 SBtn.AutoButtonColor = false
                 
@@ -395,7 +402,7 @@ function Library:CreateWindow(config)
                         local value = math.floor(sMin + (sMax - sMin) * percentage)
                         
                         SBarFill.Size = UDim2.new(percentage, 0, 1, 0)
-                        SBtn.Position = UDim2.new(percentage, -6, 0.5, -6)
+                        SBtn.Position = UDim2.new(percentage, -5, 0.5, -5)
                         SVal.Text = tostring(value) .. sSuffix
                         
                         sCallback(value)
@@ -411,12 +418,12 @@ function Library:CreateWindow(config)
 end
 
 -- ============================================================
--- STEAL AN EGG SCRIPT
+-- GAME LOGIC - STEAL AN EGG
 -- ============================================================
 
 local Window = Library:CreateWindow({
     GameName = "Steal An Egg",
-    Version = "v1.0.0"
+    Version = "v2.0.0"
 })
 
 -- Services
@@ -427,83 +434,147 @@ local RunService = game:GetService("RunService")
 -- Variables
 local getgenv = getgenv or function() return _G end
 
--- TABS
-local AutoTab = Window:CreateTab("Automation")
-local PlayerTab = Window:CreateTab("Player")
-local VisualsTab = Window:CreateTab("Visuals")
-
--- AUTOMATION TAB
-local FarmSection = AutoTab:CreateSection("Farming")
-
 getgenv().AutoSteal = false
+getgenv().AutoTreadmill = false
+getgenv().WalkSpeedValue = 16
+getgenv().JumpPowerValue = 50
+getgenv().InfiniteJump = false
+getgenv().AntiTouchKill = true -- Protects character from lasers/kill parts by default
+getgenv().GodModeGuard = true  -- Keeps character alive
+getgenv().NoclipSpeed = true   -- Prevents wall collision physics reset
+getgenv().EggESP = false
+
+-- ============================================================
+-- MAIN DASHBOARD (ALL FEATURES DIRECTLY VISIBLE ON ONE PAGE)
+-- ============================================================
+local MainDashTab = Window:CreateTab("Dashboard")
+
+-- SECTION 1: SAFETY & ANTI-DIE (Laser Bypass & Godmode)
+local SafetySection = MainDashTab:CreateSection("Safety & Anti-Die")
+
+SafetySection:CreateToggle({
+    Name = "Anti-Touch Kill (Lasers)",
+    Default = true,
+    UsePurple = false,
+    Callback = function(state)
+        getgenv().AntiTouchKill = state
+    end
+})
+
+SafetySection:CreateToggle({
+    Name = "GodMode Guard",
+    Default = true,
+    UsePurple = true,
+    Callback = function(state)
+        getgenv().GodModeGuard = state
+    end
+})
+
+SafetySection:CreateToggle({
+    Name = "Noclip (Wall Pass)",
+    Default = true,
+    UsePurple = false,
+    Callback = function(state)
+        getgenv().NoclipSpeed = state
+    end
+})
+
+-- SECTION 2: FARMING & AUTOMATION
+local FarmSection = MainDashTab:CreateSection("Farming Mods")
+
 FarmSection:CreateToggle({
     Name = "Auto Steal Eggs",
     UsePurple = false,
     Callback = function(state)
         getgenv().AutoSteal = state
         if state then
-            -- Base position save kar lo jahan khare ho
-            local basePosition = nil
+            -- Base Position save
+            local baseCFrame = nil
             if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
-                basePosition = LocalPlayer.Character.HumanoidRootPart.CFrame
+                baseCFrame = LocalPlayer.Character.HumanoidRootPart.CFrame
             end
             
+            -- Safe Teleport Helper (Hovers 5 studs ABOVE egg + disables CanTouch)
+            local function SafeGlideToTarget(targetCFrame)
+                local char = LocalPlayer.Character
+                if not char or not char:FindFirstChild("HumanoidRootPart") or not char:FindFirstChildOfClass("Humanoid") then return false end
+                if char:FindFirstChildOfClass("Humanoid").Health <= 0 then return false end
+                
+                -- Temporarily disable CanTouch on parts to bypass laser sensors
+                for _, part in pairs(char:GetChildren()) do
+                    if part:IsA("BasePart") then
+                        part.CanTouch = false
+                        part.CanCollide = false
+                    end
+                end
+                
+                -- Hover 5 studs ABOVE egg so player never touches floor lasers
+                local safeHoverCFrame = targetCFrame + Vector3.new(0, 5, 0)
+                
+                local dist = (char.HumanoidRootPart.Position - safeHoverCFrame.Position).Magnitude
+                local duration = math.clamp(dist / 250, 0.15, 0.5)
+                
+                local tween = TweenService:Create(char.HumanoidRootPart, TweenInfo.new(duration, Enum.EasingStyle.Linear), {CFrame = safeHoverCFrame})
+                tween:Play()
+                tween.Completed:Wait()
+                return true
+            end
+
             task.spawn(function()
                 while getgenv().AutoSteal do
-                    task.wait(0.2)
-                    local success, err = pcall(function()
+                    task.wait(0.25)
+                    pcall(function()
                         local char = LocalPlayer.Character
-                        if char and char:FindFirstChild("HumanoidRootPart") and basePosition then
-                            local foundEgg = false
-                            
-                            local scanTargets = {workspace}
-                            for _, v in pairs(workspace:GetChildren()) do
-                                if v:IsA("Folder") or v:IsA("Model") then
-                                    table.insert(scanTargets, v)
-                                end
+                        if char and char:FindFirstChild("HumanoidRootPart") and char:FindFirstChildOfClass("Humanoid") and char:FindFirstChildOfClass("Humanoid").Health > 0 then
+                            if not baseCFrame then
+                                baseCFrame = char.HumanoidRootPart.CFrame
                             end
+                            
+                            -- Scan workspace for eggs & prompts
+                            for _, obj in pairs(workspace:GetDescendants()) do
+                                if not getgenv().AutoSteal then break end
+                                local isEgg = false
+                                local prompt = nil
 
-                            for _, target in ipairs(scanTargets) do
-                                for _, obj in ipairs(target:GetChildren()) do
-                                    if obj:IsA("BasePart") or obj:IsA("Model") then
-                                        local prompt = obj:FindFirstChildWhichIsA("ProximityPrompt", true)
-                                        if prompt and string.find(prompt.ActionText:lower(), "steal") then
-                                            -- Egg ke paas jao
-                                            char.HumanoidRootPart.CFrame = obj:GetPivot() + Vector3.new(0, 3, 0)
-                                            task.wait(0.3)
-                                            fireproximityprompt(prompt)
-                                            task.wait(0.3)
-                                            -- Wapas base me aao egg drop karne
-                                            char.HumanoidRootPart.CFrame = basePosition
-                                            foundEgg = true
-                                            break
-                                        elseif string.find(obj.Name:lower(), "egg") and not obj:IsDescendantOf(char) then
-                                            char.HumanoidRootPart.CFrame = obj:GetPivot() + Vector3.new(0, 3, 0)
-                                            task.wait(0.3)
-                                            if firetouchinterest and obj:IsA("BasePart") then
-                                                firetouchinterest(char.HumanoidRootPart, obj, 0)
-                                                task.wait(0.1)
-                                                firetouchinterest(char.HumanoidRootPart, obj, 1)
+                                if obj:IsA("ProximityPrompt") and (string.find(obj.ActionText:lower(), "steal") or string.find(obj.ObjectText:lower(), "egg")) then
+                                    prompt = obj
+                                    isEgg = true
+                                elseif (obj:IsA("Model") or obj:IsA("BasePart")) and string.find(obj.Name:lower(), "egg") and not obj:IsDescendantOf(char) then
+                                    prompt = obj:FindFirstChildWhichIsA("ProximityPrompt", true)
+                                    isEgg = true
+                                end
+
+                                if isEgg then
+                                    local targetPart = obj:IsA("Model") and (obj.PrimaryPart or obj:FindFirstChildWhichIsA("BasePart")) or (obj:IsA("BasePart") and obj or obj.Parent)
+                                    if targetPart and targetPart:IsA("BasePart") then
+                                        -- 1. Hover safely above Egg
+                                        if SafeGlideToTarget(targetPart.CFrame) then
+                                            task.wait(0.15)
+                                            -- 2. Fire prompt without touching ground
+                                            if prompt then
+                                                fireproximityprompt(prompt, 0)
+                                            elseif firetouchinterest then
+                                                firetouchinterest(char.HumanoidRootPart, targetPart, 0)
+                                                task.wait(0.05)
+                                                firetouchinterest(char.HumanoidRootPart, targetPart, 1)
                                             end
-                                            task.wait(0.3)
-                                            char.HumanoidRootPart.CFrame = basePosition
-                                            foundEgg = true
+                                            task.wait(0.2)
+                                            -- 3. Return safely to Base
+                                            SafeGlideToTarget(baseCFrame)
+                                            task.wait(0.4)
                                             break
                                         end
                                     end
                                 end
-                                if foundEgg then break end
                             end
                         end
                     end)
-                    if not success then warn("AutoSteal Error:", err) end
                 end
             end)
         end
     end
 })
 
-getgenv().AutoTreadmill = false
 FarmSection:CreateToggle({
     Name = "Auto Treadmill",
     UsePurple = true,
@@ -512,8 +583,8 @@ FarmSection:CreateToggle({
         if state then
             task.spawn(function()
                 while getgenv().AutoTreadmill do
-                    task.wait(0.5)
-                    local success, err = pcall(function()
+                    task.wait(0.4)
+                    pcall(function()
                         local treadmillEvent = nil
                         for _, v in pairs(game:GetService("ReplicatedStorage"):GetDescendants()) do
                             if v:IsA("RemoteEvent") and string.find(v.Name:lower(), "treadmill") then
@@ -525,35 +596,26 @@ FarmSection:CreateToggle({
                         if treadmillEvent then
                             treadmillEvent:FireServer()
                         else
-                            local foundTreadmill = false
                             for _, obj in pairs(workspace:GetDescendants()) do
                                 if obj:IsA("BasePart") and string.find(obj.Name:lower(), "treadmill") then
                                     if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
-                                        LocalPlayer.Character.HumanoidRootPart.CFrame = obj.CFrame
-                                        foundTreadmill = true
+                                        LocalPlayer.Character.HumanoidRootPart.CFrame = obj.CFrame + Vector3.new(0, 3, 0)
                                         break
                                     end
                                 end
                             end
-                            if not foundTreadmill then
-                                warn("Treadmill Remote ya Treadmills parts workspace me nahi mile!")
-                            end
                         end
                     end)
-                    if not success then warn("AutoTreadmill Error:", err) end
                 end
             end)
         end
     end
 })
 
--- PLAYER TAB
-local MovementSection = PlayerTab:CreateSection("Movement")
+-- SECTION 3: PLAYER MODS (Speed & Jump)
+local PlayerSection = MainDashTab:CreateSection("Player Mods")
 
-getgenv().WalkSpeedValue = 16
-getgenv().JumpPowerValue = 50
-
-MovementSection:CreateSlider({
+PlayerSection:CreateSlider({
     Name = "WalkSpeed",
     Min = 16,
     Max = 300,
@@ -564,7 +626,7 @@ MovementSection:CreateSlider({
     end
 })
 
-MovementSection:CreateSlider({
+PlayerSection:CreateSlider({
     Name = "JumpPower",
     Min = 50,
     Max = 300,
@@ -575,23 +637,142 @@ MovementSection:CreateSlider({
     end
 })
 
--- Anti-Cheat Bypass Speed using CFrame
-RunService.RenderStepped:Connect(function(deltaTime)
+PlayerSection:CreateToggle({
+    Name = "Infinite Jump",
+    UsePurple = false,
+    Callback = function(state)
+        getgenv().InfiniteJump = state
+    end
+})
+
+-- SECTION 4: VISUALS (ESP)
+local VisualsSection = MainDashTab:CreateSection("Visuals (ESP)")
+
+VisualsSection:CreateToggle({
+    Name = "Highlight Egg ESP",
+    UsePurple = true,
+    Callback = function(state)
+        getgenv().EggESP = state
+        
+        local function clearESP()
+            for _, v in pairs(workspace:GetDescendants()) do
+                if v:IsA("Highlight") and v.Name == "NomiiEggESP" then
+                    v:Destroy()
+                end
+            end
+        end
+        
+        clearESP()
+        
+        if state then
+            task.spawn(function()
+                while getgenv().EggESP do
+                    task.wait(1.5)
+                    pcall(function()
+                        for _, obj in pairs(workspace:GetDescendants()) do
+                            if not getgenv().EggESP then break end
+                            if (obj:IsA("Model") or obj:IsA("BasePart")) and not obj:IsDescendantOf(LocalPlayer.Character) then
+                                local isEgg = string.find(obj.Name:lower(), "egg") or string.find(obj.Name:lower(), "nest")
+                                if not isEgg then
+                                    local prompt = obj:FindFirstChildWhichIsA("ProximityPrompt", true)
+                                    if prompt and (string.find(prompt.ActionText:lower(), "steal") or string.find(prompt.ObjectText:lower(), "egg")) then
+                                        isEgg = true
+                                    end
+                                end
+
+                                if isEgg then
+                                    if not obj:FindFirstChild("NomiiEggESP") then
+                                        local hl = Instance.new("Highlight")
+                                        hl.Name = "NomiiEggESP"
+                                        hl.Adornee = obj
+                                        hl.FillColor = Color3.fromRGB(0, 229, 255)
+                                        hl.OutlineColor = Color3.fromRGB(255, 255, 255)
+                                        hl.FillTransparency = 0.35
+                                        hl.OutlineTransparency = 0
+                                        hl.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
+                                        hl.Parent = obj
+                                    end
+                                end
+                            end
+                        end
+                    end)
+                end
+            end)
+        else
+            clearESP()
+        end
+    end
+})
+
+-- ============================================================
+-- CORE LOOPS (VELOCITY SPEED BYPASS, ANTI-TOUCH KILL, GODMODE)
+-- ============================================================
+
+-- 1. Infinite Jump Listener
+UserInputService.JumpRequest:Connect(function()
+    if getgenv().InfiniteJump then
+        pcall(function()
+            local char = LocalPlayer.Character
+            if char and char:FindFirstChildOfClass("Humanoid") then
+                char:FindFirstChildOfClass("Humanoid"):ChangeState(Enum.HumanoidStateType.Jumping)
+            end
+        end)
+    end
+end)
+
+-- 2. Stepped Loop: Anti-Touch Kill Lasers & Godmode Guard
+RunService.Stepped:Connect(function()
     pcall(function()
         local char = LocalPlayer.Character
-        if char and char:FindFirstChild("Humanoid") and char:FindFirstChild("HumanoidRootPart") then
-            local hrp = char.HumanoidRootPart
-            local hum = char.Humanoid
-            
-            -- WalkSpeed Bypass (Anti-Cheat Rubberband fix)
-            if getgenv().WalkSpeedValue > 16 then
-                if hum.MoveDirection.Magnitude > 0 then
-                    -- Normal chalne ke ilawa hum thoda aage dhakka denge CFrame se
-                    hrp.CFrame = hrp.CFrame + (hum.MoveDirection * (getgenv().WalkSpeedValue * deltaTime * 0.5))
+        if char then
+            -- Disable CanTouch to pass through lasers safely
+            if getgenv().AntiTouchKill or getgenv().AutoSteal then
+                for _, part in pairs(char:GetChildren()) do
+                    if part:IsA("BasePart") then
+                        part.CanTouch = false
+                    end
                 end
             end
             
-            -- JumpPower override
+            -- Disable Noclip collision if enabled
+            if getgenv().NoclipSpeed or getgenv().AutoSteal then
+                for _, part in pairs(char:GetChildren()) do
+                    if part:IsA("BasePart") and part.Name ~= "HumanoidRootPart" then
+                        part.CanCollide = false
+                    end
+                end
+            end
+            
+            -- Keep Humanoid alive & prevent Dead state
+            local hum = char:FindFirstChildOfClass("Humanoid")
+            if hum and getgenv().GodModeGuard then
+                hum:SetStateEnabled(Enum.HumanoidStateType.Dead, false)
+                hum:SetStateEnabled(Enum.HumanoidStateType.FallingDown, false)
+                hum:SetStateEnabled(Enum.HumanoidStateType.Ragdoll, false)
+            end
+        end
+    end)
+end)
+
+-- 3. RenderStepped Loop: Velocity Bypassed WalkSpeed (Fixes Rubberband Reset)
+RunService.RenderStepped:Connect(function(deltaTime)
+    pcall(function()
+        local char = LocalPlayer.Character
+        if char and char:FindFirstChild("HumanoidRootPart") and char:FindFirstChildOfClass("Humanoid") then
+            local hrp = char.HumanoidRootPart
+            local hum = char:FindFirstChildOfClass("Humanoid")
+            
+            -- WalkSpeed Bypass using AssemblyLinearVelocity (Prevents anti-cheat position resets)
+            if getgenv().WalkSpeedValue > 16 then
+                hum.WalkSpeed = getgenv().WalkSpeedValue
+                if hum.MoveDirection.Magnitude > 0 then
+                    local moveDir = hum.MoveDirection.Unit
+                    local targetVel = moveDir * getgenv().WalkSpeedValue
+                    hrp.AssemblyLinearVelocity = Vector3.new(targetVel.X, hrp.AssemblyLinearVelocity.Y, targetVel.Z)
+                end
+            end
+            
+            -- JumpPower Override
             if getgenv().JumpPowerValue > 50 then
                 hum.UseJumpPower = true
                 hum.JumpPower = getgenv().JumpPowerValue
@@ -600,68 +781,4 @@ RunService.RenderStepped:Connect(function(deltaTime)
     end)
 end)
 
-getgenv().InfiniteJump = false
-MovementSection:CreateToggle({
-    Name = "Infinite Jump",
-    UsePurple = false,
-    Callback = function(state)
-        getgenv().InfiniteJump = state
-    end
-})
-
-UserInputService.JumpRequest:Connect(function()
-    if getgenv().InfiniteJump then
-        pcall(function()
-            if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
-                LocalPlayer.Character.Humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
-            end
-        end)
-    end
-end)
-
--- VISUALS TAB
-local ESPSection = VisualsTab:CreateSection("ESP Options")
-local ESPFolder = Instance.new("Folder")
-ESPFolder.Name = "EggESPFolder"
-local successESP = pcall(function() ESPFolder.Parent = CoreGui end)
-if not successESP then ESPFolder.Parent = LocalPlayer:WaitForChild("PlayerGui") end
-
-getgenv().EggESP = false
-ESPSection:CreateToggle({
-    Name = "Egg ESP",
-    UsePurple = true,
-    Callback = function(state)
-        getgenv().EggESP = state
-        if state then
-            task.spawn(function()
-                while getgenv().EggESP do
-                    task.wait(1)
-                    pcall(function()
-                        ESPFolder:ClearAllChildren()
-                        for _, obj in pairs(workspace:GetDescendants()) do
-                            if obj:IsA("BasePart") and string.find(obj.Name:lower(), "egg") and not obj:IsDescendantOf(LocalPlayer.Character) then
-                                local bbg = Instance.new("BillboardGui")
-                                bbg.Parent = ESPFolder
-                                bbg.Adornee = obj
-                                bbg.Size = UDim2.new(0, 100, 0, 30)
-                                bbg.AlwaysOnTop = true
-                                
-                                local txt = Instance.new("TextLabel")
-                                txt.Parent = bbg
-                                txt.Size = UDim2.new(1, 0, 1, 0)
-                                txt.BackgroundTransparency = 1
-                                txt.Text = "Egg [ESP]"
-                                txt.TextColor3 = Color3.fromRGB(0, 255, 255)
-                                txt.TextStrokeTransparency = 0
-                                txt.Font = Enum.Font.GothamBold
-                                txt.TextSize = 14
-                            end
-                        end
-                    end)
-                end
-            end)
-        else
-            ESPFolder:ClearAllChildren()
-        end
-    end
-})
+print("NOMII SCRIPTS - Steal An Egg v2.0.0 Loaded Successfully!")
