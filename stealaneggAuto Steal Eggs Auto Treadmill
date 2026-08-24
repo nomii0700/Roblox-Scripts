@@ -442,15 +442,20 @@ FarmSection:CreateToggle({
     Callback = function(state)
         getgenv().AutoSteal = state
         if state then
+            -- Base position save kar lo jahan khare ho
+            local basePosition = nil
+            if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
+                basePosition = LocalPlayer.Character.HumanoidRootPart.CFrame
+            end
+            
             task.spawn(function()
                 while getgenv().AutoSteal do
-                    task.wait(0.1)
+                    task.wait(0.2)
                     local success, err = pcall(function()
                         local char = LocalPlayer.Character
-                        if char and char:FindFirstChild("HumanoidRootPart") then
+                        if char and char:FindFirstChild("HumanoidRootPart") and basePosition then
                             local foundEgg = false
                             
-                            -- Lag se bachne ke liye sirf main folders scan karein
                             local scanTargets = {workspace}
                             for _, v in pairs(workspace:GetChildren()) do
                                 if v:IsA("Folder") or v:IsA("Model") then
@@ -463,20 +468,25 @@ FarmSection:CreateToggle({
                                     if obj:IsA("BasePart") or obj:IsA("Model") then
                                         local prompt = obj:FindFirstChildWhichIsA("ProximityPrompt", true)
                                         if prompt and string.find(prompt.ActionText:lower(), "steal") then
-                                            -- Teleport a bit above the egg so we don't get stuck
+                                            -- Egg ke paas jao
                                             char.HumanoidRootPart.CFrame = obj:GetPivot() + Vector3.new(0, 3, 0)
-                                            task.wait(0.2)
+                                            task.wait(0.3)
                                             fireproximityprompt(prompt)
+                                            task.wait(0.3)
+                                            -- Wapas base me aao egg drop karne
+                                            char.HumanoidRootPart.CFrame = basePosition
                                             foundEgg = true
                                             break
                                         elseif string.find(obj.Name:lower(), "egg") and not obj:IsDescendantOf(char) then
                                             char.HumanoidRootPart.CFrame = obj:GetPivot() + Vector3.new(0, 3, 0)
-                                            task.wait(0.2)
+                                            task.wait(0.3)
                                             if firetouchinterest and obj:IsA("BasePart") then
                                                 firetouchinterest(char.HumanoidRootPart, obj, 0)
                                                 task.wait(0.1)
                                                 firetouchinterest(char.HumanoidRootPart, obj, 1)
                                             end
+                                            task.wait(0.3)
+                                            char.HumanoidRootPart.CFrame = basePosition
                                             foundEgg = true
                                             break
                                         end
@@ -565,17 +575,26 @@ MovementSection:CreateSlider({
     end
 })
 
--- Forcefully override speed and jump power every frame (bypasses game's anti-speed)
-RunService.Heartbeat:Connect(function()
+-- Anti-Cheat Bypass Speed using CFrame
+RunService.RenderStepped:Connect(function(deltaTime)
     pcall(function()
         local char = LocalPlayer.Character
-        if char and char:FindFirstChild("Humanoid") then
+        if char and char:FindFirstChild("Humanoid") and char:FindFirstChild("HumanoidRootPart") then
+            local hrp = char.HumanoidRootPart
+            local hum = char.Humanoid
+            
+            -- WalkSpeed Bypass (Anti-Cheat Rubberband fix)
             if getgenv().WalkSpeedValue > 16 then
-                char.Humanoid.WalkSpeed = getgenv().WalkSpeedValue
+                if hum.MoveDirection.Magnitude > 0 then
+                    -- Normal chalne ke ilawa hum thoda aage dhakka denge CFrame se
+                    hrp.CFrame = hrp.CFrame + (hum.MoveDirection * (getgenv().WalkSpeedValue * deltaTime * 0.5))
+                end
             end
+            
+            -- JumpPower override
             if getgenv().JumpPowerValue > 50 then
-                char.Humanoid.UseJumpPower = true
-                char.Humanoid.JumpPower = getgenv().JumpPowerValue
+                hum.UseJumpPower = true
+                hum.JumpPower = getgenv().JumpPowerValue
             end
         end
     end)
