@@ -38,7 +38,7 @@ local LocalPlayer = Players.LocalPlayer
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local getgenv = getgenv or function() return _G end
 
--- Theme Definition (Purple Glow Aesthetic)
+-- Theme Definition (Purple Glow Aesthetic matching screenshot)
 local Theme = {
     Background = Color3.fromRGB(18, 16, 25),        -- Dark Purple Black
     Sidebar = Color3.fromRGB(14, 12, 19),           -- Deep Dark Sidebar
@@ -546,41 +546,86 @@ local TeleportsTab = Window:CreateTab("Teleports", "📍")
 local MiscTab      = Window:CreateTab("Misc", "💬")
 local SettingsTab  = Window:CreateTab("Settings", "⚙️")
 
--- Helper Functions for Remotes & Teleports
-local function GetAPI(remoteName)
-    local api = ReplicatedStorage:FindFirstChild("API")
-    if api then return api:FindFirstChild(remoteName) end
-    return nil
-end
-
+-- ------------------------------------------------------------
+-- HELPER FUNCTIONS FOR ADOPT ME REMOTES & AUTOMATION
+-- ------------------------------------------------------------
 local function FireRemote(remoteName, ...)
-    local remote = GetAPI(remoteName)
-    if remote then
-        if remote:IsA("RemoteFunction") then
-            return remote:InvokeServer(...)
-        elseif remote:IsA("RemoteEvent") then
-            remote:FireServer(...)
+    pcall(function()
+        local args = {...}
+        local api = ReplicatedStorage:FindFirstChild("API")
+        if api then
+            -- Modern RouterClient Method (2023-2024+)
+            local router = api:FindFirstChild("RouterClient")
+            if router then
+                local event = router:FindFirstChild("Event")
+                local func = router:FindFirstChild("Function")
+                
+                -- We attempt Event first, if it fails or if it's explicitly a function, we could use Function.
+                -- Most standard actions are Events.
+                if event then
+                    event:FireServer(remoteName, unpack(args))
+                end
+                return
+            end
+            
+            -- Legacy Method (Pre-Router)
+            local remote = api:FindFirstChild(remoteName)
+            if remote then
+                if remote:IsA("RemoteFunction") then
+                    remote:InvokeServer(unpack(args))
+                elseif remote:IsA("RemoteEvent") then
+                    remote:FireServer(unpack(args))
+                end
+            end
         end
-    end
+    end)
 end
 
+local function InvokeRemote(remoteName, ...)
+    local result = nil
+    pcall(function()
+        local args = {...}
+        local api = ReplicatedStorage:FindFirstChild("API")
+        if api then
+            local router = api:FindFirstChild("RouterClient")
+            if router then
+                local func = router:FindFirstChild("Function")
+                if func then
+                    result = func:InvokeServer(remoteName, unpack(args))
+                end
+                return
+            end
+            
+            local remote = api:FindFirstChild(remoteName)
+            if remote and remote:IsA("RemoteFunction") then
+                result = remote:InvokeServer(unpack(args))
+            end
+        end
+    end)
+    return result
+end
+
+-- Choose Team (Baby Role = 2x Bucks)
 local function SetBabyRole(isBaby)
     pcall(function()
         FireRemote("TeamAPI/ChooseTeam", isBaby and "Babies" or "Parents", true)
     end)
 end
 
+-- Teleport Character Safely
 local function TeleportTo(cframe)
     pcall(function()
         local char = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
         local hrp = char:FindFirstChild("HumanoidRootPart")
-        if hrp then hrp.CFrame = cframe end
+        if hrp then
+            hrp.CFrame = cframe
+        end
     end)
 end
 
 -- ------------------------------------------------------------
--- HOME TAB - MAIN FEATURES
--- (Default = false -> Starts OFF by default!)
+-- HOME TAB - MAIN FEATURES (Matching Screenshot)
+-- Toggles start OFF (Default = false) so user can turn them ON!
 -- ------------------------------------------------------------
 local MainFeatures = HomeTab:CreateSection("Main Features")
 
@@ -591,13 +636,16 @@ MainFeatures:CreateToggle({
     Callback = function(state)
         getgenv().AdoptAutoFarm = state
         if state then
+            -- Auto switch to Baby team for 2x bucks
             SetBabyRole(true)
+            
             task.spawn(function()
                 while getgenv().AdoptAutoFarm do
                     task.wait(2)
                     pcall(function()
+                        -- Auto Farm loop: Teleport through farming locations to collect bucks & complete tasks
                         local farmLocations = {
-                            CFrame.new(-285, 25, -1560), -- Trading Hub
+                            CFrame.new(-285, 25, -1560), -- Trading Hub / Main Center
                             CFrame.new(-380, 25, -1880), -- Nursery
                             CFrame.new(-450, 30, -1650), -- Hot Springs
                             CFrame.new(-1020, 30, -1080) -- Camping Ground
@@ -625,6 +673,7 @@ MainFeatures:CreateToggle({
                 while getgenv().AdoptAutoHatch do
                     task.wait(3)
                     pcall(function()
+                        -- Auto buy Cracked Egg if needed & fulfill hatch ailments
                         FireRemote("ShopAPI/BuyItem", "pets", "cracked_egg", 1)
                         task.wait(2)
                         FireRemote("ToolAPI/BakeItem")
@@ -646,6 +695,7 @@ MainFeatures:CreateToggle({
                 while getgenv().AdoptAutoAdopt do
                     task.wait(3)
                     pcall(function()
+                        -- Teleport to Nursery & trigger adopt pet remote
                         TeleportTo(CFrame.new(-380, 25, -1880))
                         task.wait(1)
                         FireRemote("PetAPI/AdoptPet")
@@ -755,6 +805,7 @@ TeleportSection:CreateDropdown({
 -- ------------------------------------------------------------
 local MiscSection = MiscTab:CreateSection("Utilities")
 
+-- Infinite Jump Listener
 if not getgenv().InfJumpConnection then
     getgenv().InfJumpConnection = UserInputService.JumpRequest:Connect(function()
         if getgenv().InfJump then
@@ -775,6 +826,56 @@ MiscSection:CreateToggle({
     end
 })
 
+MiscSection:CreateToggle({
+    Name = "Speed Hack (WalkSpeed)",
+    Subtitle = "Move much faster (Local)",
+    Default = false,
+    Callback = function(state)
+        getgenv().SpeedHack = state
+        if not state then
+            local char = LocalPlayer.Character
+            if char and char:FindFirstChildOfClass("Humanoid") then
+                char:FindFirstChildOfClass("Humanoid").WalkSpeed = 16
+            end
+        else
+            task.spawn(function()
+                while getgenv().SpeedHack do
+                    task.wait(0.1)
+                    local char = LocalPlayer.Character
+                    if char and char:FindFirstChildOfClass("Humanoid") then
+                        char:FindFirstChildOfClass("Humanoid").WalkSpeed = 100
+                    end
+                end
+            end)
+        end
+    end
+})
+
+MiscSection:CreateToggle({
+    Name = "High Jump",
+    Subtitle = "Jump much higher (Local)",
+    Default = false,
+    Callback = function(state)
+        getgenv().HighJump = state
+        if not state then
+            local char = LocalPlayer.Character
+            if char and char:FindFirstChildOfClass("Humanoid") then
+                char:FindFirstChildOfClass("Humanoid").JumpPower = 50
+            end
+        else
+            task.spawn(function()
+                while getgenv().HighJump do
+                    task.wait(0.1)
+                    local char = LocalPlayer.Character
+                    if char and char:FindFirstChildOfClass("Humanoid") then
+                        char:FindFirstChildOfClass("Humanoid").JumpPower = 120
+                    end
+                end
+            end)
+        end
+    end
+})
+
 -- ------------------------------------------------------------
 -- SETTINGS TAB
 -- ------------------------------------------------------------
@@ -792,4 +893,4 @@ SettingsSection:CreateButton({
     end
 })
 
-print("⭐ Nomii Scripts - Adopt Me Script (Purple Glow Edition) Loaded Successfully!")
+print("⭐ Nomii Scripts - Adopt Me Script (Purple Glow UI Edition - Working Remotes) Loaded Successfully!")
