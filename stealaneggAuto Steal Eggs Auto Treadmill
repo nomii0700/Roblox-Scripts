@@ -1,21 +1,23 @@
--- NOMII REMOTE SCANNER & SPY
+-- NOMII SCRIPTS - PASSIVE REMOTE SCANNER (0% HOOK / 100% SAFE)
 local CoreGui = game:GetService("CoreGui")
-if CoreGui:FindFirstChild("NomiiRemoteScannerUI") then CoreGui:FindFirstChild("NomiiRemoteScannerUI"):Destroy() end
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+
+if CoreGui:FindFirstChild("NomiiPassiveScannerUI") then CoreGui:FindFirstChild("NomiiPassiveScannerUI"):Destroy() end
 
 local Gui = Instance.new("ScreenGui")
-Gui.Name = "NomiiRemoteScannerUI"
+Gui.Name = "NomiiPassiveScannerUI"
 Gui.Parent = CoreGui
 
 local Frame = Instance.new("Frame")
 Frame.Parent = Gui
 Frame.BackgroundColor3 = Color3.fromRGB(20, 22, 28)
-Frame.Position = UDim2.new(0, 20, 0.3, 0)
-Frame.Size = UDim2.new(0, 420, 0, 280)
+Frame.Position = UDim2.new(0, 20, 0.2, 0)
+Frame.Size = UDim2.new(0, 440, 0, 360)
 Frame.Active = true
 Frame.Draggable = true
 
 local Corner = Instance.new("UICorner")
-Corner.CornerRadius = UDim.new(0, 8)
+Corner.CornerRadius = UDim.new(0, 10)
 Corner.Parent = Frame
 
 local Stroke = Instance.new("UIStroke")
@@ -27,12 +29,27 @@ local Title = Instance.new("TextLabel")
 Title.Parent = Frame
 Title.BackgroundTransparency = 1
 Title.Position = UDim2.new(0, 15, 0, 10)
-Title.Size = UDim2.new(1, -30, 0, 24)
+Title.Size = UDim2.new(1, -50, 0, 22)
 Title.Font = Enum.Font.GothamBold
-Title.Text = "NOMII REMOTE SCANNER & SPY"
+Title.Text = "NOMII SCRIPTS - GAME REMOTES LIST"
 Title.TextColor3 = Color3.fromRGB(0, 229, 255)
 Title.TextSize = 14
 Title.TextXAlignment = Enum.TextXAlignment.Left
+
+local CloseBtn = Instance.new("TextButton")
+CloseBtn.Parent = Frame
+CloseBtn.BackgroundColor3 = Color3.fromRGB(220, 50, 50)
+CloseBtn.Position = UDim2.new(1, -32, 0, 10)
+CloseBtn.Size = UDim2.new(0, 20, 0, 20)
+CloseBtn.Font = Enum.Font.GothamBold
+CloseBtn.Text = "X"
+CloseBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+CloseBtn.TextSize = 12
+CloseBtn.MouseButton1Click:Connect(function() Gui:Destroy() end)
+
+local CloseCorner = Instance.new("UICorner")
+CloseCorner.CornerRadius = UDim.new(0, 4)
+CloseCorner.Parent = CloseBtn
 
 local Subtitle = Instance.new("TextLabel")
 Subtitle.Parent = Frame
@@ -40,8 +57,8 @@ Subtitle.BackgroundTransparency = 1
 Subtitle.Position = UDim2.new(0, 15, 0, 32)
 Subtitle.Size = UDim2.new(1, -30, 0, 16)
 Subtitle.Font = Enum.Font.Gotham
-Subtitle.Text = "Steal an Egg manually now! Fired remotes will show below:"
-Subtitle.TextColor3 = Color3.fromRGB(200, 200, 200)
+Subtitle.Text = "All Remotes found in ReplicatedStorage & Workspace:"
+Subtitle.TextColor3 = Color3.fromRGB(180, 185, 195)
 Subtitle.TextSize = 11
 Subtitle.TextXAlignment = Enum.TextXAlignment.Left
 
@@ -59,73 +76,42 @@ local Layout = Instance.new("UIListLayout")
 Layout.Parent = Scroll
 Layout.Padding = UDim.new(0, 6)
 
-local function logRemote(remoteName, remotePath, method, argsStr)
-    print("--------------------------------------------------")
-    print("[NOMII SPY] Method: " .. tostring(method))
-    print("[NOMII SPY] Remote Name: " .. tostring(remoteName))
-    print("[NOMII SPY] Full Path: " .. tostring(remotePath))
-    print("[NOMII SPY] Arguments: " .. tostring(argsStr))
-    print("--------------------------------------------------")
-
-    local LogBox = Instance.new("Frame")
-    LogBox.Parent = Scroll
-    LogBox.BackgroundColor3 = Color3.fromRGB(32, 35, 44)
-    LogBox.Size = UDim2.new(1, 0, 0, 42)
-    
-    local LogCorner = Instance.new("UICorner")
-    LogCorner.CornerRadius = UDim.new(0, 6)
-    LogCorner.Parent = LogBox
-
-    local LogText = Instance.new("TextLabel")
-    LogText.Parent = LogBox
-    LogText.BackgroundTransparency = 1
-    LogText.Position = UDim2.new(0, 10, 0, 4)
-    LogText.Size = UDim2.new(1, -20, 0, 18)
-    LogText.Font = Enum.Font.GothamBold
-    LogText.Text = "⚡ " .. tostring(remoteName) .. " (" .. tostring(method) .. ")"
-    LogText.TextColor3 = Color3.fromRGB(0, 229, 255)
-    LogText.TextSize = 12
-    LogText.TextXAlignment = Enum.TextXAlignment.Left
-
-    local PathText = Instance.new("TextLabel")
-    PathText.Parent = LogBox
-    PathText.BackgroundTransparency = 1
-    PathText.Position = UDim2.new(0, 10, 0, 22)
-    PathText.Size = UDim2.new(1, -20, 0, 16)
-    PathText.Font = Enum.Font.Code
-    PathText.Text = tostring(remotePath)
-    PathText.TextColor3 = Color3.fromRGB(180, 185, 195)
-    PathText.TextSize = 10
-    PathText.TextXAlignment = Enum.TextXAlignment.Left
-end
-
-if hookmetamethod then
-    local oldNamecall
-    oldNamecall = hookmetamethod(game, "__namecall", function(self, ...)
-        local method = getnamecallmethod and getnamecallmethod() or "FireServer"
-        if (method == "FireServer" or method == "fireServer" or method == "InvokeServer" or method == "invokeServer") and self then
-            local remoteName = self.Name
-            local remotePath = self:GetFullName()
-            local args = {...}
-            local argsFormatted = ""
-            for i, v in ipairs(args) do
-                argsFormatted = argsFormatted .. tostring(v) .. (i < #args and ", " or "")
-            end
-            task.spawn(function() logRemote(remoteName, remotePath, method, argsFormatted) end)
-        end
-        return oldNamecall(self, ...)
-    end)
-end
-
-task.spawn(function()
-    task.wait(0.5)
-    print("=============== EXISTING REMOTES IN GAME ===============")
-    for _, v in pairs(game:GetDescendants()) do
-        if v:IsA("RemoteEvent") or v:IsA("RemoteFunction") then
-            print("[REMOTE FOUND] " .. v.ClassName .. ": " .. v:GetFullName())
-        end
+local count = 0
+for _, obj in pairs(game:GetDescendants()) do
+    if obj:IsA("RemoteEvent") or obj:IsA("RemoteFunction") then
+        count = count + 1
+        local Card = Instance.new("Frame")
+        Card.Parent = Scroll
+        Card.BackgroundColor3 = Color3.fromRGB(32, 35, 45)
+        Card.Size = UDim2.new(1, 0, 0, 44)
+        
+        local CardCorner = Instance.new("UICorner")
+        CardCorner.CornerRadius = UDim.new(0, 6)
+        CardCorner.Parent = Card
+        
+        local NameLabel = Instance.new("TextLabel")
+        NameLabel.Parent = Card
+        NameLabel.BackgroundTransparency = 1
+        NameLabel.Position = UDim2.new(0, 10, 0, 5)
+        NameLabel.Size = UDim2.new(1, -20, 0, 18)
+        NameLabel.Font = Enum.Font.GothamBold
+        NameLabel.Text = "[" .. obj.ClassName .. "] " .. obj.Name
+        NameLabel.TextColor3 = obj:IsA("RemoteEvent") and Color3.fromRGB(0, 229, 255) or Color3.fromRGB(157, 78, 221)
+        NameLabel.TextSize = 12
+        NameLabel.TextXAlignment = Enum.TextXAlignment.Left
+        
+        local PathLabel = Instance.new("TextBox")
+        PathLabel.Parent = Card
+        PathLabel.BackgroundTransparency = 1
+        PathLabel.Position = UDim2.new(0, 10, 0, 23)
+        PathLabel.Size = UDim2.new(1, -20, 0, 16)
+        PathLabel.Font = Enum.Font.Code
+        PathLabel.Text = obj:GetFullName()
+        PathLabel.TextColor3 = Color3.fromRGB(180, 185, 195)
+        PathLabel.TextSize = 10
+        PathLabel.TextXAlignment = Enum.TextXAlignment.Left
+        PathLabel.ClearTextOnFocus = false
+        PathLabel.TextEditable = false
     end
-    print("====================================================")
-end)
-
-logRemote("SCANNER READY", "Manually Steal an Egg in-game now!", "INFO", "")
+end
+print("[NOMII SCANNER] Found " .. count .. " Remotes in game.")
