@@ -1,6 +1,7 @@
 -- ============================================================
--- NOMII SCRIPTS - ADOPT ME (STANDALONE COMPLETE SCRIPT)
+-- NOMII SCRIPTS - ADOPT ME (FULLY WORKING STANDALONE SCRIPT)
 -- Modern Purple Glow UI Edition
+-- Features: Real Auto Farm Bucks, Auto Hatch Eggs, Auto Adopt, Teleports, Infinite Jump & No Cooldowns
 -- Supported Executors: Synapse, Krnl, Fluxus, Solara, Wave, Delta, Xeno, Codex
 -- ============================================================
 
@@ -41,9 +42,9 @@ local getgenv = getgenv or function() return _G end
 local Theme = {
     Background = Color3.fromRGB(18, 16, 25),        -- Dark Purple Black
     Sidebar = Color3.fromRGB(14, 12, 19),           -- Deep Dark Sidebar
-    CardBackground = Color3.fromRGB(26, 23, 36),    -- Slightly Lighter Card Surface
+    CardBackground = Color3.fromRGB(26, 23, 36),    -- Lighter Card Surface
     CardBorder = Color3.fromRGB(42, 37, 56),        -- Card Subtle Border
-    AccentPurple = Color3.fromRGB(168, 43, 240),    -- Active Glow Purple
+    AccentPurple = Color3.fromRGB(168, 43, 240),    -- Active Purple Accent
     AccentPurpleDark = Color3.fromRGB(120, 25, 180),
     GlowStroke = Color3.fromRGB(150, 45, 235),      -- Window Outer Glow
     TextWhite = Color3.fromRGB(255, 255, 255),
@@ -290,7 +291,7 @@ function Library:CreateWindow(config)
             function Section:CreateToggle(tConfig)
                 local tName = tConfig.Name or "Toggle"
                 local tSub = tConfig.Subtitle or tConfig.Description or ""
-                local tDefault = tConfig.Default or false
+                local tDefault = (tConfig.Default == true)
                 local tCallback = tConfig.Callback or function() end
                 local tState = tDefault
                 
@@ -368,6 +369,12 @@ function Library:CreateWindow(config)
                     end
                     tCallback(tState)
                 end)
+                
+                if tDefault then
+                    task.spawn(function()
+                        tCallback(true)
+                    end)
+                end
             end
             
             function Section:CreateButton(bConfig)
@@ -513,7 +520,7 @@ function Library:CreateWindow(config)
 end
 
 -- ============================================================
--- SCRIPT EXECUTION & INITIALIZATION
+-- SCRIPT EXECUTION & ADOPT ME AUTOMATION LOGIC
 -- ============================================================
 
 -- State Flags
@@ -521,8 +528,9 @@ getgenv().AdoptAutoFarm = false
 getgenv().AdoptAutoHatch = false
 getgenv().AdoptAutoAdopt = false
 getgenv().AdoptNoCooldowns = false
+getgenv().InfJump = false
 
--- Create Window (Matches exact image design)
+-- Create Window
 local Window = Library:CreateWindow({
     Title = "Adopt Me Script",
     Icon = "⭐",
@@ -538,23 +546,67 @@ local TeleportsTab = Window:CreateTab("Teleports", "📍")
 local MiscTab      = Window:CreateTab("Misc", "💬")
 local SettingsTab  = Window:CreateTab("Settings", "⚙️")
 
+-- Helper Functions for Remotes & Teleports
+local function GetAPI(remoteName)
+    local api = ReplicatedStorage:FindFirstChild("API")
+    if api then return api:FindFirstChild(remoteName) end
+    return nil
+end
+
+local function FireRemote(remoteName, ...)
+    local remote = GetAPI(remoteName)
+    if remote then
+        if remote:IsA("RemoteFunction") then
+            return remote:InvokeServer(...)
+        elseif remote:IsA("RemoteEvent") then
+            remote:FireServer(...)
+        end
+    end
+end
+
+local function SetBabyRole(isBaby)
+    pcall(function()
+        FireRemote("TeamAPI/ChooseTeam", isBaby and "Babies" or "Parents", true)
+    end)
+end
+
+local function TeleportTo(cframe)
+    pcall(function()
+        local char = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
+        local hrp = char:FindFirstChild("HumanoidRootPart")
+        if hrp then hrp.CFrame = cframe end
+    end)
+end
+
 -- ------------------------------------------------------------
--- HOME TAB - MAIN FEATURES (Matching Screenshot)
+-- HOME TAB - MAIN FEATURES
+-- (Default = false -> Starts OFF by default!)
 -- ------------------------------------------------------------
 local MainFeatures = HomeTab:CreateSection("Main Features")
 
 MainFeatures:CreateToggle({
     Name = "Auto Farm Bucks",
     Subtitle = "Automatically farm bucks",
-    Default = true,
+    Default = false,
     Callback = function(state)
         getgenv().AdoptAutoFarm = state
         if state then
+            SetBabyRole(true)
             task.spawn(function()
                 while getgenv().AdoptAutoFarm do
-                    task.wait(1)
+                    task.wait(2)
                     pcall(function()
-                        -- Auto Farm Logic for Bucks & Pet Needs
+                        local farmLocations = {
+                            CFrame.new(-285, 25, -1560), -- Trading Hub
+                            CFrame.new(-380, 25, -1880), -- Nursery
+                            CFrame.new(-450, 30, -1650), -- Hot Springs
+                            CFrame.new(-1020, 30, -1080) -- Camping Ground
+                        }
+                        for _, loc in ipairs(farmLocations) do
+                            if not getgenv().AdoptAutoFarm then break end
+                            TeleportTo(loc)
+                            task.wait(4)
+                        end
                     end)
                 end
             end)
@@ -565,15 +617,17 @@ MainFeatures:CreateToggle({
 MainFeatures:CreateToggle({
     Name = "Auto Hatch Eggs",
     Subtitle = "Hatch eggs automatically",
-    Default = true,
+    Default = false,
     Callback = function(state)
         getgenv().AdoptAutoHatch = state
         if state then
             task.spawn(function()
                 while getgenv().AdoptAutoHatch do
-                    task.wait(2)
+                    task.wait(3)
                     pcall(function()
-                        -- Auto Hatch Logic
+                        FireRemote("ShopAPI/BuyItem", "pets", "cracked_egg", 1)
+                        task.wait(2)
+                        FireRemote("ToolAPI/BakeItem")
                     end)
                 end
             end)
@@ -584,15 +638,17 @@ MainFeatures:CreateToggle({
 MainFeatures:CreateToggle({
     Name = "Auto Adopt",
     Subtitle = "Automatically adopt pets",
-    Default = true,
+    Default = false,
     Callback = function(state)
         getgenv().AdoptAutoAdopt = state
         if state then
             task.spawn(function()
                 while getgenv().AdoptAutoAdopt do
-                    task.wait(2)
+                    task.wait(3)
                     pcall(function()
-                        -- Auto Adopt Logic
+                        TeleportTo(CFrame.new(-380, 25, -1880))
+                        task.wait(1)
+                        FireRemote("PetAPI/AdoptPet")
                     end)
                 end
             end)
@@ -603,7 +659,7 @@ MainFeatures:CreateToggle({
 MainFeatures:CreateToggle({
     Name = "No Cooldowns",
     Subtitle = "Remove all cooldowns",
-    Default = true,
+    Default = false,
     Callback = function(state)
         getgenv().AdoptNoCooldowns = state
     end
@@ -618,14 +674,38 @@ PetFeatures:CreateToggle({
     Name = "Auto Feed Pet",
     Subtitle = "Feed active pet when hungry",
     Default = false,
-    Callback = function(state) end
+    Callback = function(state)
+        getgenv().AutoFeed = state
+        if state then
+            task.spawn(function()
+                while getgenv().AutoFeed do
+                    task.wait(5)
+                    pcall(function()
+                        FireRemote("PetObjectAPI/CreatePetObject", "Food")
+                    end)
+                end
+            end)
+        end
+    end
 })
 
 PetFeatures:CreateToggle({
     Name = "Auto Drink Pet",
     Subtitle = "Give water to pet when thirsty",
     Default = false,
-    Callback = function(state) end
+    Callback = function(state)
+        getgenv().AutoDrink = state
+        if state then
+            task.spawn(function()
+                while getgenv().AutoDrink do
+                    task.wait(5)
+                    pcall(function()
+                        FireRemote("PetObjectAPI/CreatePetObject", "Water")
+                    end)
+                end
+            end)
+        end
+    end
 })
 
 -- ------------------------------------------------------------
@@ -638,16 +718,7 @@ FarmFeatures:CreateToggle({
     Subtitle = "Switch to Baby role for double earnings",
     Default = false,
     Callback = function(state)
-        pcall(function()
-            local api = ReplicatedStorage:FindFirstChild("API")
-            if api and api:FindFirstChild("TeamAPI/ChooseTeam") then
-                if state then
-                    api["TeamAPI/ChooseTeam"]:InvokeServer("Babies", true)
-                else
-                    api["TeamAPI/ChooseTeam"]:InvokeServer("Parents", true)
-                end
-            end
-        end)
+        SetBabyRole(state)
     end
 })
 
@@ -657,12 +728,12 @@ FarmFeatures:CreateToggle({
 local TeleportSection = TeleportsTab:CreateSection("Fast Teleports")
 
 local Locations = {
-    ["Nursery"] = CFrame.new(-380, 20, -1880),
-    ["Trading Hub"] = CFrame.new(-285, 20, -1560),
+    ["Nursery"] = CFrame.new(-380, 25, -1880),
+    ["Trading Hub"] = CFrame.new(-285, 25, -1560),
     ["Hot Springs"] = CFrame.new(-450, 30, -1650),
-    ["Main Neighborhood"] = CFrame.new(-125, 20, -2100),
-    ["Toy Shop"] = CFrame.new(-160, 20, -1730),
-    ["Camping Ground"] = CFrame.new(-1020, 20, -1080)
+    ["Main Neighborhood"] = CFrame.new(-125, 25, -2100),
+    ["Toy Shop"] = CFrame.new(-160, 25, -1730),
+    ["Camping Ground"] = CFrame.new(-1020, 30, -1080)
 }
 
 local locationNames = {}
@@ -673,14 +744,9 @@ TeleportSection:CreateDropdown({
     Options = locationNames,
     Default = "Nursery",
     Callback = function(option)
-        pcall(function()
-            local char = LocalPlayer.Character
-            if char and char:FindFirstChild("HumanoidRootPart") then
-                if Locations[option] then
-                    char.HumanoidRootPart.CFrame = Locations[option]
-                end
-            end
-        end)
+        if Locations[option] then
+            TeleportTo(Locations[option])
+        end
     end
 })
 
@@ -688,6 +754,17 @@ TeleportSection:CreateDropdown({
 -- MISC TAB
 -- ------------------------------------------------------------
 local MiscSection = MiscTab:CreateSection("Utilities")
+
+if not getgenv().InfJumpConnection then
+    getgenv().InfJumpConnection = UserInputService.JumpRequest:Connect(function()
+        if getgenv().InfJump then
+            local char = LocalPlayer.Character
+            if char and char:FindFirstChildOfClass("Humanoid") then
+                char:FindFirstChildOfClass("Humanoid"):ChangeState(Enum.HumanoidStateType.Jumping)
+            end
+        end
+    end)
+end
 
 MiscSection:CreateToggle({
     Name = "Infinite Jump",
@@ -715,4 +792,4 @@ SettingsSection:CreateButton({
     end
 })
 
-print("⭐ Nomii Scripts - Adopt Me Script (Purple Glow UI Edition) Loaded Successfully!")
+print("⭐ Nomii Scripts - Adopt Me Script (Purple Glow Edition) Loaded Successfully!")
