@@ -420,6 +420,112 @@ function Library:CreateWindow(config)
                 end)
             end
             
+            function Section:CreateDropdown(dConfig)
+                local dName = dConfig.Name or "Dropdown"
+                local dOptions = dConfig.Options or {}
+                local dDefault = dConfig.Default or ""
+                local dCallback = dConfig.Callback or function() end
+                
+                local DropdownFrame = Instance.new("Frame")
+                DropdownFrame.Parent = ItemContainer
+                DropdownFrame.BackgroundTransparency = 1
+                DropdownFrame.Size = UDim2.new(1, 0, 0, 45)
+                
+                local DTitle = Instance.new("TextLabel")
+                DTitle.Parent = DropdownFrame
+                DTitle.BackgroundTransparency = 1
+                DTitle.Size = UDim2.new(1, 0, 0, 15)
+                DTitle.Font = Theme.RegularFont
+                DTitle.Text = dName
+                DTitle.TextColor3 = Theme.TextWhite
+                DTitle.TextSize = 13
+                DTitle.TextXAlignment = Enum.TextXAlignment.Left
+                
+                local DBtn = Instance.new("TextButton")
+                DBtn.Parent = DropdownFrame
+                DBtn.BackgroundColor3 = Theme.Background
+                DBtn.Position = UDim2.new(0, 0, 0, 20)
+                DBtn.Size = UDim2.new(1, 0, 0, 25)
+                DBtn.Font = Theme.RegularFont
+                DBtn.Text = "  " .. (dDefault ~= "" and dDefault or "Select Option...")
+                DBtn.TextColor3 = Theme.TextGray
+                DBtn.TextSize = 13
+                DBtn.TextXAlignment = Enum.TextXAlignment.Left
+                DBtn.AutoButtonColor = false
+                
+                local DCorner = Instance.new("UICorner")
+                DCorner.CornerRadius = UDim.new(0, 4)
+                DCorner.Parent = DBtn
+                
+                local DropIcon = Instance.new("TextLabel")
+                DropIcon.Parent = DBtn
+                DropIcon.BackgroundTransparency = 1
+                DropIcon.Position = UDim2.new(1, -20, 0, 0)
+                DropIcon.Size = UDim2.new(0, 20, 1, 0)
+                DropIcon.Font = Theme.Font
+                DropIcon.Text = "v"
+                DropIcon.TextColor3 = Theme.TextGray
+                DropIcon.TextSize = 12
+                
+                local DropList = Instance.new("ScrollingFrame")
+                DropList.Parent = MainFrame -- Parent to MainFrame so it renders on top
+                DropList.BackgroundColor3 = Theme.Background
+                DropList.Size = UDim2.new(0, 0, 0, 0)
+                DropList.Visible = false
+                DropList.ZIndex = 10
+                DropList.ScrollBarThickness = 2
+                DropList.ScrollBarImageColor3 = Theme.AccentCyan
+                DropList.BorderSizePixel = 1
+                DropList.BorderColor3 = Theme.SectionBackground
+                
+                local ListLayout = Instance.new("UIListLayout")
+                ListLayout.Parent = DropList
+                ListLayout.SortOrder = Enum.SortOrder.LayoutOrder
+                
+                -- Populate Dropdown
+                for _, option in ipairs(dOptions) do
+                    local OptBtn = Instance.new("TextButton")
+                    OptBtn.Parent = DropList
+                    OptBtn.BackgroundColor3 = Theme.Background
+                    OptBtn.Size = UDim2.new(1, 0, 0, 25)
+                    OptBtn.Font = Theme.RegularFont
+                    OptBtn.Text = "  " .. option
+                    OptBtn.TextColor3 = Theme.TextWhite
+                    OptBtn.TextSize = 13
+                    OptBtn.TextXAlignment = Enum.TextXAlignment.Left
+                    OptBtn.ZIndex = 11
+                    OptBtn.AutoButtonColor = true
+                    
+                    OptBtn.MouseButton1Click:Connect(function()
+                        DBtn.Text = "  " .. option
+                        DropList.Visible = false
+                        dCallback(option)
+                    end)
+                end
+                
+                local listOpen = false
+                DBtn.MouseButton1Click:Connect(function()
+                    listOpen = not listOpen
+                    if listOpen then
+                        local absPos = DBtn.AbsolutePosition
+                        local mainPos = MainFrame.AbsolutePosition
+                        
+                        -- Calculate relative position for the dropdown list
+                        local relX = absPos.X - mainPos.X
+                        local relY = absPos.Y - mainPos.Y + 25
+                        
+                        DropList.Position = UDim2.new(0, relX, 0, relY)
+                        DropList.Size = UDim2.new(0, DBtn.AbsoluteSize.X, 0, math.min(#dOptions * 25, 100))
+                        DropList.CanvasSize = UDim2.new(0, 0, 0, #dOptions * 25)
+                        DropList.Visible = true
+                        DropIcon.Text = "^"
+                    else
+                        DropList.Visible = false
+                        DropIcon.Text = "v"
+                    end
+                end)
+            end
+            
             return Section
         end
         
