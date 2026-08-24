@@ -594,26 +594,21 @@ FarmSection:CreateToggle({
         if state then
             task.spawn(function()
                 while getgenv().AutoTreadmill do
-                    task.wait(0.4)
+                    task.wait(0.1)
                     pcall(function()
-                        local treadmillEvent = nil
-                        for _, v in pairs(game:GetService("ReplicatedStorage"):GetDescendants()) do
-                            if v:IsA("RemoteEvent") and string.find(v.Name:lower(), "treadmill") then
-                                treadmillEvent = v
-                                break
-                            end
-                        end
-                        
-                        if treadmillEvent then
-                            treadmillEvent:FireServer()
-                        else
+                        local char = LocalPlayer.Character
+                        if char and char:FindFirstChild("HumanoidRootPart") and char:FindFirstChildOfClass("Humanoid") then
+                            local treadmill = nil
                             for _, obj in pairs(workspace:GetDescendants()) do
                                 if obj:IsA("BasePart") and string.find(obj.Name:lower(), "treadmill") then
-                                    if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
-                                        LocalPlayer.Character.HumanoidRootPart.CFrame = obj.CFrame + Vector3.new(0, 3, 0)
-                                        break
-                                    end
+                                    treadmill = obj
+                                    break
                                 end
+                            end
+                            if treadmill then
+                                -- Teleport slightly above the treadmill and auto-run to farm steps!
+                                char.HumanoidRootPart.CFrame = treadmill.CFrame + Vector3.new(0, 3, 0)
+                                char:FindFirstChildOfClass("Humanoid"):Move(Vector3.new(0, 0, -1), true)
                             end
                         end
                     end)
@@ -623,7 +618,7 @@ FarmSection:CreateToggle({
     end
 })
 
--- SECTION 3: PLAYER MODS
+-- SECTION 3: PLAYER MODS (SPEED, FLOAT, JUMP)
 local PlayerSection = MainDashTab:CreateSection("Player Mods")
 
 PlayerSection:CreateSlider({
@@ -634,6 +629,49 @@ PlayerSection:CreateSlider({
     Suffix = " WS",
     Callback = function(value)
         getgenv().WalkSpeedValue = value
+    end
+})
+
+getgenv().FlyEnabled = false
+getgenv().FlySpeed = 50
+
+PlayerSection:CreateToggle({
+    Name = "Fly / Floating",
+    UsePurple = false,
+    Callback = function(state)
+        getgenv().FlyEnabled = state
+        local char = LocalPlayer.Character
+        if not char or not char:FindFirstChild("HumanoidRootPart") then return end
+        local hrp = char.HumanoidRootPart
+        
+        if state then
+            local bv = Instance.new("BodyVelocity")
+            bv.Name = "NomiiFlyBV"
+            bv.MaxForce = Vector3.new(9e9, 9e9, 9e9)
+            bv.Velocity = Vector3.zero
+            bv.Parent = hrp
+            
+            local bg = Instance.new("BodyGyro")
+            bg.Name = "NomiiFlyBG"
+            bg.MaxTorque = Vector3.new(9e9, 9e9, 9e9)
+            bg.P = 9e4
+            bg.CFrame = hrp.CFrame
+            bg.Parent = hrp
+        else
+            if hrp:FindFirstChild("NomiiFlyBV") then hrp.NomiiFlyBV:Destroy() end
+            if hrp:FindFirstChild("NomiiFlyBG") then hrp.NomiiFlyBG:Destroy() end
+        end
+    end
+})
+
+PlayerSection:CreateSlider({
+    Name = "Fly Speed",
+    Min = 16,
+    Max = 300,
+    Default = 50,
+    Suffix = " FS",
+    Callback = function(value)
+        getgenv().FlySpeed = value
     end
 })
 
@@ -650,7 +688,7 @@ PlayerSection:CreateSlider({
 
 PlayerSection:CreateToggle({
     Name = "Infinite Jump",
-    UsePurple = false,
+    UsePurple = true,
     Callback = function(state)
         getgenv().InfiniteJump = state
     end
@@ -737,7 +775,7 @@ RunService.Stepped:Connect(function()
                 end
             end
             
-            if getgenv().NoclipSpeed or getgenv().AutoSteal then
+            if getgenv().NoclipSpeed or getgenv().AutoSteal or getgenv().FlyEnabled then
                 for _, part in pairs(char:GetChildren()) do
                     if part:IsA("BasePart") and part.Name ~= "HumanoidRootPart" then
                         part.CanCollide = false
@@ -755,6 +793,7 @@ RunService.Stepped:Connect(function()
     end)
 end)
 
+local camera = workspace.CurrentCamera
 RunService.RenderStepped:Connect(function(deltaTime)
     pcall(function()
         local char = LocalPlayer.Character
@@ -762,7 +801,8 @@ RunService.RenderStepped:Connect(function(deltaTime)
             local hrp = char.HumanoidRootPart
             local hum = char:FindFirstChildOfClass("Humanoid")
             
-            if getgenv().WalkSpeedValue > 16 then
+            -- WalkSpeed Bypass
+            if getgenv().WalkSpeedValue > 16 and not getgenv().FlyEnabled then
                 hum.WalkSpeed = getgenv().WalkSpeedValue
                 if hum.MoveDirection.Magnitude > 0 then
                     local moveDir = hum.MoveDirection.Unit
@@ -771,12 +811,37 @@ RunService.RenderStepped:Connect(function(deltaTime)
                 end
             end
             
+            -- JumpPower Override
             if getgenv().JumpPowerValue > 50 then
                 hum.UseJumpPower = true
                 hum.JumpPower = getgenv().JumpPowerValue
+            end
+            
+            -- Fly / Floating Logic
+            if getgenv().FlyEnabled and hrp:FindFirstChild("NomiiFlyBV") and hrp:FindFirstChild("NomiiFlyBG") then
+                local bv = hrp.NomiiFlyBV
+                local bg = hrp.NomiiFlyBG
+                
+                local moveDir = Vector3.zero
+                if UserInputService:IsKeyDown(Enum.KeyCode.W) then moveDir = moveDir + camera.CFrame.LookVector end
+                if UserInputService:IsKeyDown(Enum.KeyCode.S) then moveDir = moveDir - camera.CFrame.LookVector end
+                if UserInputService:IsKeyDown(Enum.KeyCode.A) then moveDir = moveDir - camera.CFrame.RightVector end
+                if UserInputService:IsKeyDown(Enum.KeyCode.D) then moveDir = moveDir + camera.CFrame.RightVector end
+                if UserInputService:IsKeyDown(Enum.KeyCode.Space) then moveDir = moveDir + Vector3.new(0, 1, 0) end
+                if UserInputService:IsKeyDown(Enum.KeyCode.LeftControl) then moveDir = moveDir - Vector3.new(0, 1, 0) end
+                
+                if moveDir.Magnitude > 0 then
+                    bv.Velocity = moveDir.Unit * getgenv().FlySpeed
+                else
+                    bv.Velocity = Vector3.zero
+                end
+                bg.CFrame = camera.CFrame
+                hum.PlatformStand = true
+            else
+                hum.PlatformStand = false
             end
         end
     end)
 end)
 
-print("NOMII SCRIPTS - Steal An Egg v2.1.0 Loaded Successfully!")
+print("NOMII SCRIPTS - Steal An Egg v2.2.0 (Fly + Treadmill Update) Loaded!")
