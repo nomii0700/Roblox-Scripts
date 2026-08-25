@@ -44,7 +44,7 @@ function Library:CreateWindow(config)
     local Title = config.Title or "Nomii Scripts"
     local IconText = config.Icon or "⭐"
     local Width = config.Width or 500
-    local Height = config.Height or 320
+    local Height = config.Height or 340
     
     pcall(function()
         if UIContainer:FindFirstChild("NomiiScriptsUI_V2") then
@@ -120,12 +120,23 @@ function Library:CreateWindow(config)
     HeaderTitle.Parent = HeaderBar
     HeaderTitle.BackgroundTransparency = 1
     HeaderTitle.Position = UDim2.new(0, 34, 0, 0)
-    HeaderTitle.Size = UDim2.new(0, 300, 1, 0)
+    HeaderTitle.Size = UDim2.new(0, 300, 0, 18)
     HeaderTitle.Font = Theme.FontBold
-    HeaderTitle.Text = Title
+    HeaderTitle.Text = "Nomii Scripts"
     HeaderTitle.TextColor3 = Theme.TextWhite
-    HeaderTitle.TextSize = 20
+    HeaderTitle.TextSize = 18
     HeaderTitle.TextXAlignment = Enum.TextXAlignment.Left
+    
+    local HeaderSubTitle = Instance.new("TextLabel")
+    HeaderSubTitle.Parent = HeaderBar
+    HeaderSubTitle.BackgroundTransparency = 1
+    HeaderSubTitle.Position = UDim2.new(0, 34, 0, 16)
+    HeaderSubTitle.Size = UDim2.new(0, 300, 0, 14)
+    HeaderSubTitle.Font = Theme.FontMedium
+    HeaderSubTitle.Text = Title
+    HeaderSubTitle.TextColor3 = Theme.TextGray
+    HeaderSubTitle.TextSize = 12
+    HeaderSubTitle.TextXAlignment = Enum.TextXAlignment.Left
     
     local CloseBtn = Instance.new("TextButton")
     CloseBtn.Parent = HeaderBar
@@ -195,6 +206,7 @@ function Library:CreateWindow(config)
         
         local ContentLayout = Instance.new("UIListLayout")
         ContentLayout.Parent = TabContent
+        ContentLayout.SortOrder = Enum.SortOrder.LayoutOrder
         ContentLayout.Padding = UDim.new(0, 12)
         
         TabBtn.MouseButton1Click:Connect(function()
@@ -224,6 +236,7 @@ function Library:CreateWindow(config)
         
         function Tab:CreateSection(sectionName)
             local SecHeader = Instance.new("TextLabel")
+            SecHeader.Name = "1_Header"
             SecHeader.Parent = TabContent
             SecHeader.BackgroundTransparency = 1
             SecHeader.Size = UDim2.new(1, 0, 0, 22)
@@ -234,6 +247,7 @@ function Library:CreateWindow(config)
             SecHeader.TextXAlignment = Enum.TextXAlignment.Left
             
             local SecContainer = Instance.new("Frame")
+            SecContainer.Name = "2_Container"
             SecContainer.Parent = TabContent
             SecContainer.BackgroundTransparency = 1
             SecContainer.Size = UDim2.new(1, -6, 0, 0)
@@ -332,34 +346,6 @@ local State = {
     AutoHatch = false
 }
 
--- Cached Remotes to prevent extreme lag from GetDescendants() in fast loops
-local CachedRemotes = {
-    Train = {},
-    Pull = {},
-    Fight = {},
-    Hatch = {}
-}
-
-task.spawn(function()
-    for _, v in pairs(ReplicatedStorage:GetDescendants()) do
-        if v:IsA("RemoteEvent") then
-            local name = v.Name:lower()
-            if name:find("click") or name:find("train") or name:find("addstrength") then
-                table.insert(CachedRemotes.Train, v)
-            end
-            if name:find("pull") or name:find("sword") then
-                table.insert(CachedRemotes.Pull, v)
-            end
-            if name:find("fight") or name:find("attack") or name:find("boss") or name:find("battle") then
-                table.insert(CachedRemotes.Fight, v)
-            end
-            if name:find("hatch") or name:find("open") or name:find("egg") then
-                table.insert(CachedRemotes.Hatch, v)
-            end
-        end
-    end
-end)
-
 -- ==========================================
 -- SCRIPT UI GENERATION
 -- ==========================================
@@ -368,7 +354,7 @@ local Window = Library:CreateWindow({
     Title = "Pull A Sword",
     Icon = "⚔️",
     Width = 500,
-    Height = 320
+    Height = 340
 })
 
 local MainTab = Window:CreateTab("Main", "🏠")
@@ -391,8 +377,10 @@ FarmSection:CreateToggle({
                                 tool:Activate()
                             end
                         end
-                        for _, remote in pairs(CachedRemotes.Train) do
-                            remote:FireServer()
+                        for _, v in pairs(ReplicatedStorage:GetDescendants()) do
+                            if v:IsA("RemoteEvent") and (v.Name:lower():find("click") or v.Name:lower():find("train") or v.Name:lower():find("addstrength")) then
+                                v:FireServer()
+                            end
                         end
                     end)
                     task.wait(0.01)
@@ -416,8 +404,10 @@ FarmSection:CreateToggle({
                                 fireproximityprompt(prompt)
                             end
                         end
-                        for _, remote in pairs(CachedRemotes.Pull) do
-                            remote:FireServer()
+                        for _, v in pairs(ReplicatedStorage:GetDescendants()) do
+                            if v:IsA("RemoteEvent") and (v.Name:lower():find("pull") or v.Name:lower():find("sword")) then
+                                v:FireServer()
+                            end
                         end
                     end)
                     task.wait(0.1)
@@ -442,8 +432,10 @@ FarmSection:CreateToggle({
                             if weapon and weapon.Parent ~= char then weapon.Parent = char end
                             if weapon then weapon:Activate() end
                         end
-                        for _, remote in pairs(CachedRemotes.Fight) do
-                            remote:FireServer()
+                        for _, v in pairs(ReplicatedStorage:GetDescendants()) do
+                            if v:IsA("RemoteEvent") and (v.Name:lower():find("fight") or v.Name:lower():find("attack") or v.Name:lower():find("boss") or v.Name:lower():find("battle")) then
+                                v:FireServer()
+                            end
                         end
                     end)
                     task.wait(0.1)
@@ -464,8 +456,10 @@ PetsSection:CreateToggle({
             task.spawn(function()
                 while State.AutoHatch do
                     pcall(function()
-                        for _, remote in pairs(CachedRemotes.Hatch) do
-                            remote:FireServer("Basic")
+                        for _, v in pairs(ReplicatedStorage:GetDescendants()) do
+                            if v:IsA("RemoteEvent") and (v.Name:lower():find("hatch") or v.Name:lower():find("open") or v.Name:lower():find("egg")) then
+                                v:FireServer("Basic")
+                            end
                         end
                     end)
                     task.wait(0.2)
