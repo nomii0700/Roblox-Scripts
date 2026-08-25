@@ -352,11 +352,12 @@ local function FireDynamicRemote(possibleNames, ...)
     return false
 end
 
--- Global States
-getgenv().PAS_AutoTrain = false
-getgenv().PAS_AutoFight = false
-getgenv().PAS_AutoPull = false
-getgenv().PAS_AutoHatch = false
+local State = {
+    AutoTrain = false,
+    AutoFight = false,
+    AutoPull = false,
+    AutoHatch = false
+}
 
 -- ==========================================
 -- SCRIPT UI GENERATION
@@ -375,10 +376,10 @@ FarmSection:CreateToggle({
     Name = "Auto Train (Clicker)",
     Default = false,
     Callback = function(state)
-        getgenv().PAS_AutoTrain = state
+        State.AutoTrain = state
         if state then
             task.spawn(function()
-                while getgenv().PAS_AutoTrain do
+                while State.AutoTrain do
                     -- Guessing common names for clicking
                     FireDynamicRemote({"Click", "Train", "AddStrength", "Swing"})
                     task.wait(0.01)
@@ -392,10 +393,10 @@ FarmSection:CreateToggle({
     Name = "Auto Pull Swords",
     Default = false,
     Callback = function(state)
-        getgenv().PAS_AutoPull = state
+        State.AutoPull = state
         if state then
             task.spawn(function()
-                while getgenv().PAS_AutoPull do
+                while State.AutoPull do
                     -- Guessing common names for pulling swords
                     FireDynamicRemote({"Pull", "PullSword", "EquipSword", "Interact"})
                     task.wait(1)
@@ -409,10 +410,10 @@ FarmSection:CreateToggle({
     Name = "Auto Fight",
     Default = false,
     Callback = function(state)
-        getgenv().PAS_AutoFight = state
+        State.AutoFight = state
         if state then
             task.spawn(function()
-                while getgenv().PAS_AutoFight do
+                while State.AutoFight do
                     -- Guessing common names for fighting bosses
                     FireDynamicRemote({"Fight", "Attack", "BossFight", "Damage"})
                     task.wait(0.5)
@@ -428,10 +429,10 @@ PetsSection:CreateToggle({
     Name = "Auto Hatch Eggs",
     Default = false,
     Callback = function(state)
-        getgenv().PAS_AutoHatch = state
+        State.AutoHatch = state
         if state then
             task.spawn(function()
-                while getgenv().PAS_AutoHatch do
+                while State.AutoHatch do
                     -- Requires the exact egg name in reality, but this is a placeholder attempt
                     FireDynamicRemote({"Hatch", "BuyEgg", "OpenEgg", "HatchEgg"}, "Basic Egg", 1)
                     task.wait(2)
