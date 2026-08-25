@@ -341,7 +341,10 @@ end
 local State = {
     AutoCheat = false,
     AutoSnack = false,
+    AutoFarmCoins = false,
+    AutoUpgrade = false,
     PlayerESP = false,
+    NameESP = false,
     WalkSpeed = 16,
     JumpPower = 50
 }
@@ -371,29 +374,57 @@ local function CreateESP(player)
     highlight.FillColor = Color3.fromRGB(200, 0, 0) -- Red for Danger (Teachers/Snitches)
     highlight.FillTransparency = 0.5
     highlight.OutlineColor = Color3.fromRGB(255, 255, 255)
+    highlight.Enabled = false
+    
+    local billboard = Instance.new("BillboardGui")
+    billboard.Name = "TojiNameESP"
+    billboard.Size = UDim2.new(0, 200, 0, 50)
+    billboard.StudsOffset = Vector3.new(0, 3, 0)
+    billboard.AlwaysOnTop = true
+    billboard.Enabled = false
+    
+    local textLabel = Instance.new("TextLabel")
+    textLabel.Parent = billboard
+    textLabel.Size = UDim2.new(1, 0, 1, 0)
+    textLabel.BackgroundTransparency = 1
+    textLabel.Text = player.Name
+    textLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+    textLabel.TextStrokeTransparency = 0
+    textLabel.Font = Enum.Font.GothamBold
+    textLabel.TextSize = 14
     
     local function apply()
         if player.Character then
             highlight.Parent = player.Character
+            local head = player.Character:WaitForChild("Head", 2)
+            if head then
+                billboard.Parent = head
+            end
         end
     end
     player.CharacterAdded:Connect(apply)
     apply()
-    return highlight
 end
 
 task.spawn(function()
     while task.wait(1) do
-        if State.PlayerESP then
-            for _, p in pairs(Players:GetPlayers()) do
-                if p ~= LocalPlayer and p.Character and not p.Character:FindFirstChild("TojiESP") then
+        for _, p in pairs(Players:GetPlayers()) do
+            if p ~= LocalPlayer and p.Character then
+                if not p.Character:FindFirstChild("TojiESP") then
                     CreateESP(p)
                 end
-            end
-        else
-            for _, p in pairs(Players:GetPlayers()) do
-                if p.Character and p.Character:FindFirstChild("TojiESP") then
-                    p.Character.TojiESP:Destroy()
+                
+                local highlight = p.Character:FindFirstChild("TojiESP")
+                if highlight then
+                    highlight.Enabled = State.PlayerESP
+                end
+                
+                local head = p.Character:FindFirstChild("Head")
+                if head then
+                    local nameEsp = head:FindFirstChild("TojiNameESP")
+                    if nameEsp then
+                        nameEsp.Enabled = State.NameESP
+                    end
                 end
             end
         end
@@ -410,7 +441,7 @@ local Window = Library:CreateWindow({
 local FarmTab = Window:CreateTab("Automation")
 
 FarmTab:CreateToggle({
-    Name = "Auto Cheat / Interact (Proximity)",
+    Name = "Auto Cheat (Answer Sheet Clicker)",
     Default = false,
     Callback = function(val)
         State.AutoCheat = val
@@ -418,20 +449,26 @@ FarmTab:CreateToggle({
             task.spawn(function()
                 while State.AutoCheat do
                     pcall(function()
-                        for _, prompt in pairs(Workspace:GetDescendants()) do
-                            if prompt:IsA("ProximityPrompt") then
-                                -- Only fire prompts that are close enough
-                                local char = LocalPlayer.Character
-                                if char and char:FindFirstChild("HumanoidRootPart") and prompt.Parent then
-                                    local dist = (char.HumanoidRootPart.Position - prompt.Parent.Position).Magnitude
-                                    if dist <= (prompt.MaxActivationDistance + 5) then
-                                        fireproximityprompt(prompt)
+                        -- Universal UI Clicker (Clicks A, B, C, D buttons on Answer Sheet)
+                        if LocalPlayer.PlayerGui then
+                            for _, gui in pairs(LocalPlayer.PlayerGui:GetDescendants()) do
+                                if gui:IsA("TextButton") or gui:IsA("ImageButton") then
+                                    -- Check if button is part of the answer sheet
+                                    local name = gui.Name:lower()
+                                    if name == "a" or name == "b" or name == "c" or name == "d" or name:find("answer") or name:find("option") then
+                                        -- Fire all connections on the button
+                                        for _, connection in pairs(getconnections(gui.MouseButton1Click)) do
+                                            connection:Function()
+                                        end
+                                        for _, connection in pairs(getconnections(gui.MouseButton1Down)) do
+                                            connection:Function()
+                                        end
                                     end
                                 end
                             end
                         end
                     end)
-                    task.wait(0.2)
+                    task.wait(1) -- Slowed down slightly to look human and prevent lag
                 end
             end)
         end
@@ -439,7 +476,7 @@ FarmTab:CreateToggle({
 })
 
 FarmTab:CreateToggle({
-    Name = "Spam Buy Snacks (Money Required)",
+    Name = "Auto Eat Snacks (Anxiety Control)",
     Default = false,
     Callback = function(val)
         State.AutoSnack = val
@@ -447,11 +484,59 @@ FarmTab:CreateToggle({
             task.spawn(function()
                 while State.AutoSnack do
                     pcall(function()
-                        -- Generic brute-force for common shop remotes
-                        for _, v in pairs(game:GetService("ReplicatedStorage"):GetDescendants()) do
-                            if v:IsA("RemoteEvent") then
-                                local n = v.Name:lower()
-                                if n:find("buy") or n:find("purchase") or n:find("snack") or n:find("shop") then
+                        -- Auto Equip and Activate Snack from Backpack
+                        local char = LocalPlayer.Character
+                        if char then
+                            for _, tool in pairs(LocalPlayer.Backpack:GetChildren()) do
+                                if tool:IsA("Tool") then
+                                    local tName = tool.Name:lower()
+                                    -- Match common snack names
+                                    if tName:find("chips") or tName:find("soda") or tName:find("water") or tName:find("snack") or tName:find("bar") then
+                                        tool.Parent = char -- Equip
+                                        task.wait(0.1)
+                                        tool:Activate() -- Eat/Drink
+                                        task.wait(0.5)
+                                    end
+                                end
+                            end
+                        end
+                    end)
+                    task.wait(2) -- Check backpack every 2 seconds
+                end
+            end)
+        end
+    end
+})
+
+FarmTab:CreateToggle({
+    Name = "Auto Farm Bucks / Coins",
+    Default = false,
+    Callback = function(val)
+        State.AutoFarmCoins = val
+        if val then
+            task.spawn(function()
+                while State.AutoFarmCoins do
+                    pcall(function()
+                        local char = LocalPlayer.Character
+                        if char and char:FindFirstChild("HumanoidRootPart") then
+                            -- Touch physical coins
+                            for _, v in pairs(Workspace:GetDescendants()) do
+                                if v:IsA("Part") or v:IsA("MeshPart") then
+                                    local name = v.Name:lower()
+                                    if name:match("coin") or name:match("buck") or name:match("money") or name:match("cash") then
+                                        if v:FindFirstChild("TouchInterest") then
+                                            firetouchinterest(char.HumanoidRootPart, v, 0)
+                                            task.wait(0.01)
+                                            firetouchinterest(char.HumanoidRootPart, v, 1)
+                                        else
+                                            char.HumanoidRootPart.CFrame = v.CFrame
+                                        end
+                                    end
+                                end
+                            end
+                            -- Fire remote events for coins
+                            for _, v in pairs(game:GetService("ReplicatedStorage"):GetDescendants()) do
+                                if v:IsA("RemoteEvent") and (v.Name:lower():match("coin") or v.Name:lower():match("buck") or v.Name:lower():match("reward")) then
                                     v:FireServer()
                                 end
                             end
@@ -464,15 +549,63 @@ FarmTab:CreateToggle({
     end
 })
 
-local PlayerTab = Window:CreateTab("Player Mod")
+FarmTab:CreateToggle({
+    Name = "Auto Upgrade Gears / Stats",
+    Default = false,
+    Callback = function(val)
+        State.AutoUpgrade = val
+        if val then
+            task.spawn(function()
+                while State.AutoUpgrade do
+                    pcall(function()
+                        -- Fire remote events for upgrades
+                        for _, v in pairs(game:GetService("ReplicatedStorage"):GetDescendants()) do
+                            if v:IsA("RemoteEvent") and (v.Name:lower():match("upgrade") or v.Name:lower():match("stat") or v.Name:lower():match("gear")) then
+                                v:FireServer("All")
+                                v:FireServer()
+                            end
+                        end
+                        -- Click UI buttons for upgrades
+                        if LocalPlayer.PlayerGui then
+                            for _, gui in pairs(LocalPlayer.PlayerGui:GetDescendants()) do
+                                if gui:IsA("TextButton") or gui:IsA("ImageButton") then
+                                    local name = gui.Name:lower()
+                                    local text = gui:IsA("TextButton") and gui.Text:lower() or ""
+                                    if name:match("upgrade") or name:match("buy") or name:match("stat") or text:match("upgrade") or text:match("buy") then
+                                        for _, connection in pairs(getconnections(gui.MouseButton1Click)) do
+                                            connection:Function()
+                                        end
+                                    end
+                                end
+                            end
+                        end
+                    end)
+                    task.wait(1)
+                end
+            end)
+        end
+    end
+})
 
-PlayerTab:CreateToggle({
-    Name = "Player ESP (See through walls)",
+local VisualsTab = Window:CreateTab("Visuals & ESP")
+
+VisualsTab:CreateToggle({
+    Name = "Player ESP (Highlight)",
     Default = false,
     Callback = function(val)
         State.PlayerESP = val
     end
 })
+
+VisualsTab:CreateToggle({
+    Name = "Name ESP",
+    Default = false,
+    Callback = function(val)
+        State.NameESP = val
+    end
+})
+
+local PlayerTab = Window:CreateTab("Player Mod")
 
 PlayerTab:CreateSlider({
     Name = "WalkSpeed",
