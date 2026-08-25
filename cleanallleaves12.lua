@@ -1,238 +1,412 @@
 -- ============================================================
--- NOMII SCRIPTS - CLEAN ALL THE LEAVES (OPTIMIZED)
+-- NOMII SCRIPTS - CLEAN ALL THE LEAVES (TOJI UI)
 -- ============================================================
+
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
 local Workspace = game:GetService("Workspace")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local VirtualInputManager = game:GetService("VirtualInputManager")
-local VirtualUser = game:GetService("VirtualUser")
+
 local LocalPlayer = Players.LocalPlayer
-local Character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
-LocalPlayer.CharacterAdded:Connect(function(char)
-    Character = char
-end)
--- Anti-AFK
+
+-- Prevent AFK Kick
 LocalPlayer.Idled:Connect(function()
-    VirtualUser:CaptureController()
-    VirtualUser:ClickButton2(Vector2.new())
+    game:GetService("VirtualUser"):CaptureController()
+    game:GetService("VirtualUser"):ClickButton2(Vector2.new())
 end)
--- State
+
+-- ==========================================
+-- 🎨 TOJI UI THEME & LIBRARY
+-- ==========================================
+local Theme = {
+    Background = Color3.fromRGB(15, 15, 15),
+    Sidebar = Color3.fromRGB(20, 20, 20),
+    CardBackground = Color3.fromRGB(25, 25, 25),
+    CardBorder = Color3.fromRGB(40, 40, 40),
+    AccentGreen = Color3.fromRGB(45, 185, 110),
+    TextWhite = Color3.fromRGB(240, 240, 240),
+    TextGray = Color3.fromRGB(140, 140, 140),
+    FontBold = Enum.Font.GothamBold,
+    FontMedium = Enum.Font.GothamMedium,
+    CornerSharpness = 4
+}
+
+local UIContainer = LocalPlayer:WaitForChild("PlayerGui")
+local Library = {}
+
+function Library:CreateWindow(config)
+    config = config or {}
+    local Title = config.Title or "NOMII SCRIPTS"
+    local Width = config.Width or 480
+    local Height = config.Height or 300
+    
+    pcall(function()
+        if UIContainer:FindFirstChild("TojiUI_V1") then
+            UIContainer:FindFirstChild("TojiUI_V1"):Destroy()
+        end
+    end)
+    
+    local TojiUI = Instance.new("ScreenGui")
+    TojiUI.Name = "TojiUI_V1"
+    TojiUI.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+    TojiUI.ResetOnSpawn = false
+    TojiUI.Parent = UIContainer
+    
+    local MainFrame = Instance.new("Frame")
+    MainFrame.Name = "MainFrame"
+    MainFrame.Parent = TojiUI
+    MainFrame.BackgroundColor3 = Theme.Background
+    MainFrame.Position = UDim2.new(0.5, -(Width/2), 0.5, -(Height/2))
+    MainFrame.Size = UDim2.new(0, Width, 0, Height)
+    MainFrame.ClipsDescendants = true
+    MainFrame.BorderSizePixel = 1
+    MainFrame.BorderColor3 = Theme.CardBorder
+    
+    local UICorner = Instance.new("UICorner")
+    UICorner.CornerRadius = UDim.new(0, Theme.CornerSharpness)
+    UICorner.Parent = MainFrame
+    
+    local TopLine = Instance.new("Frame")
+    TopLine.Parent = MainFrame
+    TopLine.BackgroundColor3 = Theme.AccentGreen
+    TopLine.Size = UDim2.new(1, 0, 0, 2)
+    TopLine.BorderSizePixel = 0
+    
+    local dragging, dragInput, dragStart, startPos
+    MainFrame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+            dragging = true
+            dragStart = input.Position
+            startPos = MainFrame.Position
+            input.Changed:Connect(function()
+                if input.UserInputState == Enum.UserInputState.End then dragging = false end
+            end)
+        end
+    end)
+    MainFrame.InputChanged:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
+            dragInput = input
+        end
+    end)
+    UserInputService.InputChanged:Connect(function(input)
+        if input == dragInput and dragging then
+            local delta = input.Position - dragStart
+            MainFrame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+        end
+    end)
+
+    local HeaderBar = Instance.new("Frame")
+    HeaderBar.Name = "HeaderBar"
+    HeaderBar.Parent = MainFrame
+    HeaderBar.BackgroundTransparency = 1
+    HeaderBar.Position = UDim2.new(0, 14, 0, 10)
+    HeaderBar.Size = UDim2.new(1, -28, 0, 30)
+    
+    local HeaderTitle = Instance.new("TextLabel")
+    HeaderTitle.Parent = HeaderBar
+    HeaderTitle.BackgroundTransparency = 1
+    HeaderTitle.Size = UDim2.new(0, 300, 1, 0)
+    HeaderTitle.Font = Theme.FontBold
+    HeaderTitle.Text = Title
+    HeaderTitle.TextColor3 = Theme.TextWhite
+    HeaderTitle.TextSize = 16
+    HeaderTitle.TextXAlignment = Enum.TextXAlignment.Left
+    
+    local CloseBtn = Instance.new("TextButton")
+    CloseBtn.Parent = HeaderBar
+    CloseBtn.BackgroundTransparency = 1
+    CloseBtn.Position = UDim2.new(1, -20, 0, 5)
+    CloseBtn.Size = UDim2.new(0, 20, 0, 20)
+    CloseBtn.Font = Theme.FontBold
+    CloseBtn.Text = "✕"
+    CloseBtn.TextColor3 = Theme.TextGray
+    CloseBtn.TextSize = 14
+    CloseBtn.MouseButton1Click:Connect(function() TojiUI:Destroy() end)
+    
+    local Sidebar = Instance.new("Frame")
+    Sidebar.Parent = MainFrame
+    Sidebar.BackgroundColor3 = Theme.Sidebar
+    Sidebar.Position = UDim2.new(0, 0, 0, 45)
+    Sidebar.Size = UDim2.new(0, 140, 1, -45)
+    Sidebar.BorderSizePixel = 0
+    
+    local SidebarLayout = Instance.new("UIListLayout")
+    SidebarLayout.Parent = Sidebar
+    SidebarLayout.SortOrder = Enum.SortOrder.LayoutOrder
+    SidebarLayout.Padding = UDim.new(0, 2)
+    
+    local ContentContainer = Instance.new("Frame")
+    ContentContainer.Parent = MainFrame
+    ContentContainer.BackgroundTransparency = 1
+    ContentContainer.Position = UDim2.new(0, 150, 0, 45)
+    ContentContainer.Size = UDim2.new(1, -160, 1, -45)
+    
+    local WindowObj = { Tabs = {} }
+    
+    function WindowObj:CreateTab(tabName)
+        local TabBtn = Instance.new("TextButton")
+        TabBtn.Parent = Sidebar
+        TabBtn.BackgroundColor3 = Theme.Sidebar
+        TabBtn.BackgroundTransparency = 1
+        TabBtn.Size = UDim2.new(1, 0, 0, 34)
+        TabBtn.Font = Theme.FontMedium
+        TabBtn.Text = "  " .. tabName
+        TabBtn.TextColor3 = Theme.TextGray
+        TabBtn.TextSize = 13
+        TabBtn.TextXAlignment = Enum.TextXAlignment.Left
+        
+        local ActiveIndicator = Instance.new("Frame")
+        ActiveIndicator.Parent = TabBtn
+        ActiveIndicator.BackgroundColor3 = Theme.AccentGreen
+        ActiveIndicator.Size = UDim2.new(0, 3, 1, 0)
+        ActiveIndicator.BorderSizePixel = 0
+        ActiveIndicator.Visible = false
+        
+        local TabContent = Instance.new("ScrollingFrame")
+        TabContent.Parent = ContentContainer
+        TabContent.BackgroundTransparency = 1
+        TabContent.Size = UDim2.new(1, 0, 1, -10)
+        TabContent.ScrollBarThickness = 2
+        TabContent.ScrollBarImageColor3 = Theme.AccentGreen
+        TabContent.Visible = false
+        
+        local ContentLayout = Instance.new("UIListLayout")
+        ContentLayout.Parent = TabContent
+        ContentLayout.SortOrder = Enum.SortOrder.LayoutOrder
+        ContentLayout.Padding = UDim.new(0, 10)
+        
+        TabBtn.MouseButton1Click:Connect(function()
+            for _, t in pairs(WindowObj.Tabs) do
+                t.Content.Visible = false
+                t.Btn.TextColor3 = Theme.TextGray
+                t.Indicator.Visible = false
+            end
+            TabContent.Visible = true
+            TabBtn.TextColor3 = Theme.TextWhite
+            ActiveIndicator.Visible = true
+        end)
+        
+        local Tab = { Btn = TabBtn, Indicator = ActiveIndicator, Content = TabContent }
+        table.insert(WindowObj.Tabs, Tab)
+        
+        if #WindowObj.Tabs == 1 then
+            TabContent.Visible = true
+            TabBtn.TextColor3 = Theme.TextWhite
+            ActiveIndicator.Visible = true
+        end
+        
+        function Tab:CreateToggle(tConfig)
+            local tName = tConfig.Name or "Toggle"
+            local tState = tConfig.Default or false
+            local tCallback = tConfig.Callback or function() end
+            
+            local Card = Instance.new("Frame")
+            Card.Parent = TabContent
+            Card.BackgroundColor3 = Theme.CardBackground
+            Card.Size = UDim2.new(1, -6, 0, 38)
+            Card.BorderSizePixel = 1
+            Card.BorderColor3 = Theme.CardBorder
+            
+            local Label = Instance.new("TextLabel")
+            Label.Parent = Card
+            Label.BackgroundTransparency = 1
+            Label.Position = UDim2.new(0, 12, 0, 0)
+            Label.Size = UDim2.new(1, -60, 1, 0)
+            Label.Font = Theme.FontMedium
+            Label.Text = tName
+            Label.TextColor3 = Theme.TextWhite
+            Label.TextSize = 13
+            Label.TextXAlignment = Enum.TextXAlignment.Left
+            
+            local SwitchBtn = Instance.new("TextButton")
+            SwitchBtn.Parent = Card
+            SwitchBtn.BackgroundColor3 = tState and Theme.AccentGreen or Theme.Sidebar
+            SwitchBtn.Position = UDim2.new(1, -45, 0.5, -9)
+            SwitchBtn.Size = UDim2.new(0, 34, 0, 18)
+            SwitchBtn.Text = ""
+            SwitchBtn.BorderSizePixel = 1
+            SwitchBtn.BorderColor3 = Theme.CardBorder
+            
+            local SwitchKnob = Instance.new("Frame")
+            SwitchKnob.Parent = SwitchBtn
+            SwitchKnob.BackgroundColor3 = Theme.TextWhite
+            SwitchKnob.Position = tState and UDim2.new(1, -16, 0.5, -7) or UDim2.new(0, 2, 0.5, -7)
+            SwitchKnob.Size = UDim2.new(0, 14, 0, 14)
+            SwitchKnob.BorderSizePixel = 0
+            
+            SwitchBtn.MouseButton1Click:Connect(function()
+                tState = not tState
+                if tState then
+                    SwitchKnob.Position = UDim2.new(1, -16, 0.5, -7)
+                    SwitchBtn.BackgroundColor3 = Theme.AccentGreen
+                else
+                    SwitchKnob.Position = UDim2.new(0, 2, 0.5, -7)
+                    SwitchBtn.BackgroundColor3 = Theme.Sidebar
+                end
+                tCallback(tState)
+            end)
+        end
+        return Tab
+    end
+    return WindowObj
+end
+
+-- ==========================================
+-- 🛠️ BACKEND LOGIC & BYPASSES
+-- ==========================================
 local State = {
     AutoFarm = false,
     AutoSell = false,
-    AutoEquip = false,
-    WalkSpeed = 16,
-    JumpPower = 50,
-    FarmMethod = "ClickDetector" -- ClickDetector, Touch, ProximityPrompt
+    AutoEquip = false
 }
--- UI Library (Minimal)
-local function CreateUI()
-    local sgui = Instance.new("ScreenGui")
-    sgui.Name = "CleanLeavesUI"
-    sgui.ResetOnSpawn = false
-    local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
-    if PlayerGui:FindFirstChild("CleanLeavesUI") then
-        PlayerGui.CleanLeavesUI:Destroy()
+
+-- Fire ClickDetectors securely
+local function FireCD(cd)
+    if cd and cd:IsA("ClickDetector") then
+        if typeof(fireclickdetector) == "function" then
+            fireclickdetector(cd, 0)
+        end
     end
-    sgui.Parent = PlayerGui
-    local frame = Instance.new("Frame")
-    frame.Size = UDim2.new(0, 300, 0, 350)
-    frame.Position = UDim2.new(0.5, -150, 0.5, -175)
-    frame.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
-    frame.BorderSizePixel = 2
-    frame.BorderColor3 = Color3.fromRGB(255, 170, 0)
-    frame.Active = true
-    frame.Draggable = true
-    frame.Parent = sgui
-    local title = Instance.new("TextLabel")
-    title.Size = UDim2.new(1, 0, 0, 30)
-    title.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
-    title.TextColor3 = Color3.fromRGB(255, 170, 0)
-    title.Text = "Clean All The Leaves - Farm"
-    title.Font = Enum.Font.GothamBold
-    title.TextSize = 14
-    title.Parent = frame
-    local layout = Instance.new("UIListLayout")
-    layout.Parent = frame
-    layout.Padding = UDim.new(0, 5)
-    layout.SortOrder = Enum.SortOrder.LayoutOrder
-    title.LayoutOrder = 0
-    local function CreateToggle(name, default, callback)
-        local btn = Instance.new("TextButton")
-        btn.Size = UDim2.new(1, -20, 0, 30)
-        btn.Position = UDim2.new(0, 10, 0, 0)
-        btn.BackgroundColor3 = default and Color3.fromRGB(40, 150, 40) or Color3.fromRGB(40, 40, 40)
-        btn.TextColor3 = Color3.fromRGB(255, 255, 255)
-        btn.Text = name .. (default and " [ON]" or " [OFF]")
-        btn.Font = Enum.Font.GothamSemibold
-        btn.TextSize = 14
-        btn.Parent = frame
-        
-        local state = default
-        btn.MouseButton1Click:Connect(function()
-            state = not state
-            btn.BackgroundColor3 = state and Color3.fromRGB(40, 150, 40) or Color3.fromRGB(40, 40, 40)
-            btn.Text = name .. (state and " [ON]" or " [OFF]")
-            callback(state)
-        end)
-    end
-    
-    local function CreateSlider(name, min, max, default, callback)
-        local frame = Instance.new("Frame")
-        frame.Size = UDim2.new(1, -20, 0, 40)
-        frame.BackgroundTransparency = 1
-        frame.Parent = frame.Parent -- Quick hack to put it in the list layout
-        frame.Parent = title.Parent
-        
-        local label = Instance.new("TextLabel")
-        label.Size = UDim2.new(1, 0, 0, 20)
-        label.BackgroundTransparency = 1
-        label.TextColor3 = Color3.fromRGB(255, 255, 255)
-        label.Text = name .. ": " .. default
-        label.Font = Enum.Font.Gotham
-        label.TextSize = 12
-        label.Parent = frame
-        
-        -- Simple click to set values for now
-        local btn = Instance.new("TextButton")
-        btn.Size = UDim2.new(1, 0, 0, 20)
-        btn.Position = UDim2.new(0, 0, 0, 20)
-        btn.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
-        btn.TextColor3 = Color3.fromRGB(255,255,255)
-        btn.Text = "Click to set " .. name .. " to Max"
-        btn.Parent = frame
-        btn.MouseButton1Click:Connect(function()
-            label.Text = name .. ": " .. max
-            callback(max)
-        end)
-    end
-    CreateToggle("Auto Farm Leaves", false, function(v) State.AutoFarm = v end)
-    CreateToggle("Auto Empty Bag (Sell)", false, function(v) State.AutoSell = v end)
-    CreateToggle("Auto Equip Tool", false, function(v) State.AutoEquip = v end)
-    
-    CreateSlider("WalkSpeed", 16, 100, 16, function(v) State.WalkSpeed = v end)
-    CreateSlider("JumpPower", 50, 200, 50, function(v) State.JumpPower = v end)
 end
-CreateUI()
--- ============================================================
--- HELPER FUNCTIONS
--- ============================================================
+
+-- Fire ProximityPrompts securely
+local function FirePP(pp)
+    if pp and pp:IsA("ProximityPrompt") then
+        if typeof(fireproximityprompt) == "function" then
+            fireproximityprompt(pp)
+        end
+    end
+end
+
 local function GetLeaves()
     local leaves = {}
-    -- The game usually stores leaves in a folder or in Workspace
     for _, v in pairs(Workspace:GetDescendants()) do
         if v:IsA("BasePart") then
-            -- Look for leaf keywords or parts with ClickDetectors
             local name = v.Name:lower()
             if name:match("leaf") or name:match("leaves") or name == "meshpart" then
-                if v:FindFirstChildOfClass("ClickDetector") or v:FindFirstChildOfClass("ProximityPrompt") then
-                    table.insert(leaves, v)
-                end
+                table.insert(leaves, v)
             end
         end
     end
     return leaves
 end
-local function GetTrashCans()
-    local cans = {}
-    for _, v in pairs(Workspace:GetDescendants()) do
-        if v:IsA("Model") or v:IsA("BasePart") then
-            local name = v.Name:lower()
-            if name:match("trash") or name:match("bin") or name:match("dump") or name:match("sell") then
-                table.insert(cans, v)
-            end
-        end
-    end
-    return cans
-end
-local function EquipBestTool()
-    if not Character then return end
-    local backpack = LocalPlayer:FindFirstChild("Backpack")
-    if not backpack then return end
-    
-    -- In this game, tools like "Leaf Blower" are better than hand
-    for _, tool in pairs(backpack:GetChildren()) do
-        if tool:IsA("Tool") then
-            tool.Parent = Character
-            break -- Equip first found tool, ideally we would sort by power if known
-        end
-    end
-end
--- ============================================================
--- MAIN LOOP
--- ============================================================
+
+-- Auto Equip Loop
 task.spawn(function()
-    while task.wait(0.1) do
-        -- WalkSpeed and JumpPower
-        if Character and Character:FindFirstChild("Humanoid") then
-            Character.Humanoid.WalkSpeed = State.WalkSpeed
-            Character.Humanoid.JumpPower = State.JumpPower
-        end
-        
-        -- Auto Equip
+    while task.wait(1) do
         if State.AutoEquip then
-            EquipBestTool()
-        end
-        
-        -- Auto Farm
-        if State.AutoFarm then
             pcall(function()
-                local leaves = GetLeaves()
-                for _, leaf in pairs(leaves) do
-                    if not State.AutoFarm then break end
-                    
-                    -- Method 1: Click Detector
-                    local cd = leaf:FindFirstChildOfClass("ClickDetector")
-                    if cd then
-                        fireclickdetector(cd)
-                    end
-                    
-                    -- Method 2: Proximity Prompt
-                    local pp = leaf:FindFirstChildOfClass("ProximityPrompt")
-                    if pp then
-                        fireproximityprompt(pp)
-                    end
-                    
-                    -- Method 3: Touch (if game requires walking over them)
-                    if Character and Character:FindFirstChild("HumanoidRootPart") then
-                        -- Teleport slightly above the leaf to avoid getting stuck
-                        Character.HumanoidRootPart.CFrame = leaf.CFrame + Vector3.new(0, 3, 0)
-                        if typeof(firetouchinterest) == "function" then
-                            firetouchinterest(Character.HumanoidRootPart, leaf, 0)
-                            firetouchinterest(Character.HumanoidRootPart, leaf, 1)
-                        end
-                        task.wait(0.05)
-                    end
-                end
-            end)
-        end
-        
-        -- Auto Sell
-        if State.AutoSell then
-            pcall(function()
-                local cans = GetTrashCans()
-                if #cans > 0 and Character and Character:FindFirstChild("HumanoidRootPart") then
-                    local can = cans[1] -- Go to first found trash can
-                    local targetPart = can:IsA("Model") and can.PrimaryPart or can
-                    if targetPart then
-                        Character.HumanoidRootPart.CFrame = targetPart.CFrame + Vector3.new(0, 3, 0)
-                        
-                        -- Fire prompts if available
-                        local prompt = can:FindFirstChildOfClass("ProximityPrompt", true)
-                        if prompt then
-                            fireproximityprompt(prompt)
-                        end
-                        
-                        local cd = can:FindFirstChildOfClass("ClickDetector", true)
-                        if cd then
-                            fireclickdetector(cd)
+                local backpack = LocalPlayer:FindFirstChild("Backpack")
+                local char = LocalPlayer.Character
+                if backpack and char then
+                    for _, tool in pairs(backpack:GetChildren()) do
+                        if tool:IsA("Tool") then
+                            tool.Parent = char
+                            break
                         end
                     end
-                    task.wait(1) -- Wait a bit after selling
                 end
             end)
         end
     end
 end)
-print("[NOMII SCRIPTS] Clean All The Leaves Loaded!")
+
+-- Auto Farm Loop (No Character Teleporting, pure remote/event firing)
+task.spawn(function()
+    while task.wait(0.1) do
+        if State.AutoFarm then
+            pcall(function()
+                local leaves = GetLeaves()
+                
+                -- Fire ClickDetectors & Prompts
+                for _, leaf in pairs(leaves) do
+                    if not State.AutoFarm then break end
+                    FireCD(leaf:FindFirstChildOfClass("ClickDetector"))
+                    FirePP(leaf:FindFirstChildOfClass("ProximityPrompt"))
+                end
+                
+                -- Fire Potential RemoteEvents
+                for _, remote in pairs(ReplicatedStorage:GetDescendants()) do
+                    if remote:IsA("RemoteEvent") then
+                        local rName = remote.Name:lower()
+                        if rName:match("collect") or rName:match("leaf") or rName:match("gather") or rName:match("click") then
+                            -- Try firing with and without leaf argument
+                            for _, leaf in pairs(leaves) do
+                                remote:FireServer(leaf)
+                            end
+                            remote:FireServer()
+                        end
+                    end
+                end
+            end)
+        end
+    end
+end)
+
+-- Auto Sell Loop
+task.spawn(function()
+    while task.wait(0.5) do
+        if State.AutoSell then
+            pcall(function()
+                -- Check for bins in Workspace
+                for _, v in pairs(Workspace:GetDescendants()) do
+                    if v:IsA("Model") or v:IsA("BasePart") then
+                        local name = v.Name:lower()
+                        if name:match("trash") or name:match("bin") or name:match("dump") or name:match("sell") then
+                            FireCD(v:FindFirstChildOfClass("ClickDetector", true))
+                            FirePP(v:FindFirstChildOfClass("ProximityPrompt", true))
+                        end
+                    end
+                end
+                
+                -- Fire Potential Sell RemoteEvents
+                for _, remote in pairs(ReplicatedStorage:GetDescendants()) do
+                    if remote:IsA("RemoteEvent") then
+                        local rName = remote.Name:lower()
+                        if rName:match("sell") or rName:match("empty") or rName:match("trash") or rName:match("deposit") then
+                            remote:FireServer()
+                        end
+                    end
+                end
+            end)
+        end
+    end
+end)
+
+-- ==========================================
+-- ⚙️ SCRIPT UI GENERATION
+-- ==========================================
+local Window = Library:CreateWindow({
+    Title = "CLEAN THE LEAVES",
+    Width = 480,
+    Height = 320
+})
+
+local MainTab = Window:CreateTab("Auto Farm")
+
+MainTab:CreateToggle({
+    Name = "Auto Farm Leaves (Bypass)",
+    Default = false,
+    Callback = function(val)
+        State.AutoFarm = val
+    end
+})
+
+MainTab:CreateToggle({
+    Name = "Auto Empty Bag (Sell)",
+    Default = false,
+    Callback = function(val)
+        State.AutoSell = val
+    end
+})
+
+MainTab:CreateToggle({
+    Name = "Auto Equip Tool",
+    Default = false,
+    Callback = function(val)
+        State.AutoEquip = val
+    end
+})
+
+print("[NOMII SCRIPTS] Clean The Leaves script successfully loaded with Toji UI!")
