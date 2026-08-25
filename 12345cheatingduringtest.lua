@@ -432,6 +432,23 @@ task.spawn(function()
 end)
 
 -- ==========================================
+-- 🛠️ ROBUST CLICK HELPER
+-- ==========================================
+local function FireButton(button)
+    pcall(function()
+        if typeof(getconnections) == "function" then
+            for _, c in pairs(getconnections(button.MouseButton1Click)) do c:Function() end
+            for _, c in pairs(getconnections(button.MouseButton1Down)) do c:Function() end
+            for _, c in pairs(getconnections(button.Activated)) do c:Function() end
+        end
+        if typeof(firesignal) == "function" then
+            pcall(firesignal, button.MouseButton1Click)
+            pcall(firesignal, button.Activated)
+        end
+    end)
+end
+
+-- ==========================================
 -- ⚙️ SCRIPT UI GENERATION
 -- ==========================================
 local Window = Library:CreateWindow({
@@ -456,13 +473,7 @@ FarmTab:CreateToggle({
                                     -- Check if button is part of the answer sheet
                                     local name = gui.Name:lower()
                                     if name == "a" or name == "b" or name == "c" or name == "d" or name:find("answer") or name:find("option") then
-                                        -- Fire all connections on the button
-                                        for _, connection in pairs(getconnections(gui.MouseButton1Click)) do
-                                            connection:Function()
-                                        end
-                                        for _, connection in pairs(getconnections(gui.MouseButton1Down)) do
-                                            connection:Function()
-                                        end
+                                        FireButton(gui)
                                     end
                                 end
                             end
@@ -572,9 +583,7 @@ FarmTab:CreateToggle({
                                     local name = gui.Name:lower()
                                     local text = gui:IsA("TextButton") and gui.Text:lower() or ""
                                     if name:match("upgrade") or name:match("buy") or name:match("stat") or text:match("upgrade") or text:match("buy") then
-                                        for _, connection in pairs(getconnections(gui.MouseButton1Click)) do
-                                            connection:Function()
-                                        end
+                                        FireButton(gui)
                                     end
                                 end
                             end
