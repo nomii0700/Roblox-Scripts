@@ -326,6 +326,7 @@ end
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local LocalPlayer = Players.LocalPlayer
+local getgenv = getgenv or function() return _G end
 
 -- Smart Remote Cacher (Finds remotes dynamically)
 local CachedRemotes = {}
