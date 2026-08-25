@@ -1,82 +1,89 @@
 -- ============================================================
--- NOMII SCRIPTS - PULL A SWORD (NOMII UI V1)
--- Description: Fully Standalone, Embedded UI, Auto Farm Features
+-- TOJI SCRIPTS - CHEATING DURING TESTING (TOJI UI V1)
+-- Description: Minimalist, Stealth, 100% Executor Safe
 -- ============================================================
 
 -- ==========================================
-task.wait(2) -- Wait for game to fully load to prevent executor instant-crash
-print("[DEBUG] Script Started Executing...")
--- NOMII UI LIBRARY (EMBEDDED)
+-- 🛡️ ANTI-CRASH & LOAD DELAY
 -- ==========================================
-local Library = {}
+task.wait(2) -- Wait for game to fully load to prevent executor instant-crash
+print("[TOJI SCRIPTS] Injecting...")
 
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
+local CoreGui = game:GetService("CoreGui")
+local Workspace = game:GetService("Workspace")
+
+local LocalPlayer = Players.LocalPlayer or Players.PlayerAdded:Wait()
+
+-- SAFE GUI CONTAINER (No gethui / CoreGui to prevent silent crashes)
 local function GetUIContainer()
-    local Players = game:GetService("Players")
-    local player = Players.LocalPlayer or Players.PlayerAdded:Wait()
-    return player:WaitForChild("PlayerGui")
+    return LocalPlayer:WaitForChild("PlayerGui")
 end
 
-print("[DEBUG] Fetching UI Container...")
 local UIContainer = GetUIContainer()
-print("[DEBUG] UI Container Found:", tostring(UIContainer))
-local TweenService = game:GetService("TweenService")
-local UserInputService = game:GetService("UserInputService")
 
+-- ==========================================
+-- 🎨 TOJI UI THEME (Stealth / Minimalist / Green Accent)
+-- ==========================================
 local Theme = {
-    Background = Color3.fromRGB(18, 16, 25),
-    Sidebar = Color3.fromRGB(14, 12, 19),
-    CardBackground = Color3.fromRGB(26, 23, 36),
-    CardBorder = Color3.fromRGB(42, 37, 56),
-    AccentPurple = Color3.fromRGB(168, 43, 240),
-    AccentPurpleDark = Color3.fromRGB(120, 25, 180),
-    GlowStroke = Color3.fromRGB(150, 45, 235),
-    TextWhite = Color3.fromRGB(255, 255, 255),
-    TextGray = Color3.fromRGB(160, 160, 175),
-    TextSubLabel = Color3.fromRGB(120, 120, 140),
-    StarYellow = Color3.fromRGB(255, 205, 45),
+    Background = Color3.fromRGB(15, 15, 15),     -- Pitch Black
+    Sidebar = Color3.fromRGB(20, 20, 20),        -- Dark Grey
+    CardBackground = Color3.fromRGB(25, 25, 25), -- Slightly Lighter Grey
+    CardBorder = Color3.fromRGB(40, 40, 40),     -- Subtle outline
+    AccentGreen = Color3.fromRGB(45, 185, 110),  -- Toji Toxic/Emerald Green
+    AccentGreenDark = Color3.fromRGB(30, 130, 75),
+    TextWhite = Color3.fromRGB(240, 240, 240),
+    TextGray = Color3.fromRGB(140, 140, 140),
     FontBold = Enum.Font.GothamBold,
     FontMedium = Enum.Font.GothamMedium,
-    FontRegular = Enum.Font.Gotham
+    CornerSharpness = 4 -- Very sharp edges for Toji theme
 }
+
+local Library = {}
 
 function Library:CreateWindow(config)
     config = config or {}
-    local Title = config.Title or "Nomii Scripts"
-    local IconText = config.Icon or "⭐"
-    local Width = config.Width or 500
-    local Height = config.Height or 340
+    local Title = config.Title or "TOJI SCRIPTS"
+    local Width = config.Width or 480
+    local Height = config.Height or 300
     
+    -- Cleanup Old Instances
     pcall(function()
-        if UIContainer:FindFirstChild("NomiiScriptsUI_V2") then
-            UIContainer:FindFirstChild("NomiiScriptsUI_V2"):Destroy()
+        if UIContainer:FindFirstChild("TojiUI_V1") then
+            UIContainer:FindFirstChild("TojiUI_V1"):Destroy()
         end
     end)
     
-    local NomiiUI = Instance.new("ScreenGui")
-    NomiiUI.Name = "NomiiScriptsUI_V2"
-    NomiiUI.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
-    NomiiUI.ResetOnSpawn = false
-    NomiiUI.Parent = UIContainer
+    local TojiUI = Instance.new("ScreenGui")
+    TojiUI.Name = "TojiUI_V1"
+    TojiUI.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+    TojiUI.ResetOnSpawn = false
+    TojiUI.Parent = UIContainer
     
     local MainFrame = Instance.new("Frame")
     MainFrame.Name = "MainFrame"
-    MainFrame.Parent = NomiiUI
+    MainFrame.Parent = TojiUI
     MainFrame.BackgroundColor3 = Theme.Background
     MainFrame.Position = UDim2.new(0.5, -(Width/2), 0.5, -(Height/2))
     MainFrame.Size = UDim2.new(0, Width, 0, Height)
     MainFrame.ClipsDescendants = true
-    MainFrame.BorderSizePixel = 0
+    MainFrame.BorderSizePixel = 1
+    MainFrame.BorderColor3 = Theme.CardBorder
     
     local UICorner = Instance.new("UICorner")
-    UICorner.CornerRadius = UDim.new(0, 14)
+    UICorner.CornerRadius = UDim.new(0, Theme.CornerSharpness)
     UICorner.Parent = MainFrame
     
-    local OuterStroke = Instance.new("UIStroke")
-    OuterStroke.Parent = MainFrame
-    OuterStroke.Color = Theme.GlowStroke
-    OuterStroke.Thickness = 1.5
-    OuterStroke.Transparency = 0.25
+    -- Top Accent Line
+    local TopLine = Instance.new("Frame")
+    TopLine.Parent = MainFrame
+    TopLine.BackgroundColor3 = Theme.AccentGreen
+    TopLine.Size = UDim2.new(1, 0, 0, 2)
+    TopLine.BorderSizePixel = 0
     
+    -- Dragging Logic
     local dragging, dragInput, dragStart, startPos
     MainFrame.InputBegan:Connect(function(input)
         if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
@@ -104,359 +111,323 @@ function Library:CreateWindow(config)
     HeaderBar.Name = "HeaderBar"
     HeaderBar.Parent = MainFrame
     HeaderBar.BackgroundTransparency = 1
-    HeaderBar.Position = UDim2.new(0, 16, 0, 14)
-    HeaderBar.Size = UDim2.new(1, -32, 0, 32)
-    
-    local StarIcon = Instance.new("TextLabel")
-    StarIcon.Parent = HeaderBar
-    StarIcon.BackgroundTransparency = 1
-    StarIcon.Size = UDim2.new(0, 28, 1, 0)
-    StarIcon.Font = Theme.FontBold
-    StarIcon.Text = IconText
-    StarIcon.TextColor3 = Theme.StarYellow
-    StarIcon.TextSize = 22
+    HeaderBar.Position = UDim2.new(0, 14, 0, 10)
+    HeaderBar.Size = UDim2.new(1, -28, 0, 30)
     
     local HeaderTitle = Instance.new("TextLabel")
     HeaderTitle.Parent = HeaderBar
     HeaderTitle.BackgroundTransparency = 1
-    HeaderTitle.Position = UDim2.new(0, 34, 0, 0)
-    HeaderTitle.Size = UDim2.new(0, 300, 0, 18)
+    HeaderTitle.Size = UDim2.new(0, 200, 1, 0)
     HeaderTitle.Font = Theme.FontBold
-    HeaderTitle.Text = "Nomii Scripts"
+    HeaderTitle.Text = Title
     HeaderTitle.TextColor3 = Theme.TextWhite
-    HeaderTitle.TextSize = 18
+    HeaderTitle.TextSize = 16
     HeaderTitle.TextXAlignment = Enum.TextXAlignment.Left
-    
-    local HeaderSubTitle = Instance.new("TextLabel")
-    HeaderSubTitle.Parent = HeaderBar
-    HeaderSubTitle.BackgroundTransparency = 1
-    HeaderSubTitle.Position = UDim2.new(0, 34, 0, 16)
-    HeaderSubTitle.Size = UDim2.new(0, 300, 0, 14)
-    HeaderSubTitle.Font = Theme.FontMedium
-    HeaderSubTitle.Text = Title
-    HeaderSubTitle.TextColor3 = Theme.TextGray
-    HeaderSubTitle.TextSize = 12
-    HeaderSubTitle.TextXAlignment = Enum.TextXAlignment.Left
     
     local CloseBtn = Instance.new("TextButton")
     CloseBtn.Parent = HeaderBar
     CloseBtn.BackgroundTransparency = 1
-    CloseBtn.Position = UDim2.new(1, -24, 0, 4)
-    CloseBtn.Size = UDim2.new(0, 24, 0, 24)
+    CloseBtn.Position = UDim2.new(1, -20, 0, 5)
+    CloseBtn.Size = UDim2.new(0, 20, 0, 20)
     CloseBtn.Font = Theme.FontBold
     CloseBtn.Text = "✕"
     CloseBtn.TextColor3 = Theme.TextGray
-    CloseBtn.TextSize = 16
-    
-    CloseBtn.MouseButton1Click:Connect(function() NomiiUI:Destroy() end)
+    CloseBtn.TextSize = 14
+    CloseBtn.MouseButton1Click:Connect(function() TojiUI:Destroy() end)
     
     local Sidebar = Instance.new("Frame")
     Sidebar.Parent = MainFrame
-    Sidebar.BackgroundTransparency = 1
-    Sidebar.Position = UDim2.new(0, 16, 0, 56)
-    Sidebar.Size = UDim2.new(0, 140, 1, -70)
+    Sidebar.BackgroundColor3 = Theme.Sidebar
+    Sidebar.Position = UDim2.new(0, 0, 0, 45)
+    Sidebar.Size = UDim2.new(0, 130, 1, -45)
+    Sidebar.BorderSizePixel = 0
     
     local SidebarLayout = Instance.new("UIListLayout")
     SidebarLayout.Parent = Sidebar
     SidebarLayout.SortOrder = Enum.SortOrder.LayoutOrder
-    SidebarLayout.Padding = UDim.new(0, 6)
+    SidebarLayout.Padding = UDim.new(0, 2)
     
     local ContentContainer = Instance.new("Frame")
     ContentContainer.Parent = MainFrame
     ContentContainer.BackgroundTransparency = 1
-    ContentContainer.Position = UDim2.new(0, 168, 0, 56)
-    ContentContainer.Size = UDim2.new(1, -184, 1, -70)
+    ContentContainer.Position = UDim2.new(0, 140, 0, 45)
+    ContentContainer.Size = UDim2.new(1, -150, 1, -45)
     
     local WindowObj = { Tabs = {} }
     
-    function WindowObj:CreateTab(tabName, iconText)
-        iconText = iconText or "📄"
+    function WindowObj:CreateTab(tabName)
         local TabBtn = Instance.new("TextButton")
         TabBtn.Parent = Sidebar
-        TabBtn.BackgroundColor3 = Theme.Background
+        TabBtn.BackgroundColor3 = Theme.Sidebar
         TabBtn.BackgroundTransparency = 1
-        TabBtn.Size = UDim2.new(1, 0, 0, 38)
+        TabBtn.Size = UDim2.new(1, 0, 0, 34)
         TabBtn.Font = Theme.FontMedium
-        TabBtn.Text = "      " .. tabName
+        TabBtn.Text = "  " .. tabName
         TabBtn.TextColor3 = Theme.TextGray
-        TabBtn.TextSize = 14
+        TabBtn.TextSize = 13
         TabBtn.TextXAlignment = Enum.TextXAlignment.Left
         
-        local BtnCorner = Instance.new("UICorner")
-        BtnCorner.CornerRadius = UDim.new(0, 10)
-        BtnCorner.Parent = TabBtn
-        
-        local TabIcon = Instance.new("TextLabel")
-        TabIcon.Parent = TabBtn
-        TabIcon.BackgroundTransparency = 1
-        TabIcon.Position = UDim2.new(0, 12, 0, 0)
-        TabIcon.Size = UDim2.new(0, 20, 1, 0)
-        TabIcon.Font = Theme.FontBold
-        TabIcon.Text = iconText
-        TabIcon.TextColor3 = Theme.TextGray
-        TabIcon.TextSize = 15
+        local ActiveIndicator = Instance.new("Frame")
+        ActiveIndicator.Parent = TabBtn
+        ActiveIndicator.BackgroundColor3 = Theme.AccentGreen
+        ActiveIndicator.Size = UDim2.new(0, 3, 1, 0)
+        ActiveIndicator.BorderSizePixel = 0
+        ActiveIndicator.Visible = false
         
         local TabContent = Instance.new("ScrollingFrame")
         TabContent.Parent = ContentContainer
         TabContent.BackgroundTransparency = 1
-        TabContent.Size = UDim2.new(1, 0, 1, 0)
-        TabContent.ScrollBarThickness = 3
-        TabContent.ScrollBarImageColor3 = Theme.AccentPurple
+        TabContent.Size = UDim2.new(1, 0, 1, -10)
+        TabContent.ScrollBarThickness = 2
+        TabContent.ScrollBarImageColor3 = Theme.AccentGreen
         TabContent.Visible = false
         
         local ContentLayout = Instance.new("UIListLayout")
         ContentLayout.Parent = TabContent
         ContentLayout.SortOrder = Enum.SortOrder.LayoutOrder
-        ContentLayout.Padding = UDim.new(0, 12)
+        ContentLayout.Padding = UDim.new(0, 10)
         
         TabBtn.MouseButton1Click:Connect(function()
             for _, t in pairs(WindowObj.Tabs) do
                 t.Content.Visible = false
-                t.Btn.BackgroundTransparency = 1
                 t.Btn.TextColor3 = Theme.TextGray
-                t.Icon.TextColor3 = Theme.TextGray
+                t.Indicator.Visible = false
             end
             TabContent.Visible = true
-            TabBtn.BackgroundColor3 = Theme.AccentPurple
-            TabBtn.BackgroundTransparency = 0
             TabBtn.TextColor3 = Theme.TextWhite
-            TabIcon.TextColor3 = Theme.TextWhite
+            ActiveIndicator.Visible = true
         end)
         
-        local Tab = { Btn = TabBtn, Icon = TabIcon, Content = TabContent }
+        local Tab = { Btn = TabBtn, Indicator = ActiveIndicator, Content = TabContent }
         table.insert(WindowObj.Tabs, Tab)
         
         if #WindowObj.Tabs == 1 then
             TabContent.Visible = true
-            TabBtn.BackgroundColor3 = Theme.AccentPurple
-            TabBtn.BackgroundTransparency = 0
             TabBtn.TextColor3 = Theme.TextWhite
-            TabIcon.TextColor3 = Theme.TextWhite
+            ActiveIndicator.Visible = true
         end
         
-        function Tab:CreateSection(sectionName)
-            local SecHeader = Instance.new("TextLabel")
-            SecHeader.Name = "1_Header"
-            SecHeader.Parent = TabContent
-            SecHeader.BackgroundTransparency = 1
-            SecHeader.Size = UDim2.new(1, 0, 0, 22)
-            SecHeader.Font = Theme.FontBold
-            SecHeader.Text = sectionName
-            SecHeader.TextColor3 = Theme.TextWhite
-            SecHeader.TextSize = 16
-            SecHeader.TextXAlignment = Enum.TextXAlignment.Left
+        function Tab:CreateToggle(tConfig)
+            local tName = tConfig.Name or "Toggle"
+            local tState = tConfig.Default or false
+            local tCallback = tConfig.Callback or function() end
             
-            local SecContainer = Instance.new("Frame")
-            SecContainer.Name = "2_Container"
-            SecContainer.Parent = TabContent
-            SecContainer.BackgroundTransparency = 1
-            SecContainer.Size = UDim2.new(1, -6, 0, 0)
-            SecContainer.AutomaticSize = Enum.AutomaticSize.Y
+            local Card = Instance.new("Frame")
+            Card.Parent = TabContent
+            Card.BackgroundColor3 = Theme.CardBackground
+            Card.Size = UDim2.new(1, -6, 0, 38)
+            Card.BorderSizePixel = 1
+            Card.BorderColor3 = Theme.CardBorder
             
-            local ContainerLayout = Instance.new("UIListLayout")
-            ContainerLayout.Parent = SecContainer
-            ContainerLayout.Padding = UDim.new(0, 8)
+            local Label = Instance.new("TextLabel")
+            Label.Parent = Card
+            Label.BackgroundTransparency = 1
+            Label.Position = UDim2.new(0, 12, 0, 0)
+            Label.Size = UDim2.new(1, -60, 1, 0)
+            Label.Font = Theme.FontMedium
+            Label.Text = tName
+            Label.TextColor3 = Theme.TextWhite
+            Label.TextSize = 13
+            Label.TextXAlignment = Enum.TextXAlignment.Left
             
-            local Section = {}
+            local SwitchBtn = Instance.new("TextButton")
+            SwitchBtn.Parent = Card
+            SwitchBtn.BackgroundColor3 = tState and Theme.AccentGreen or Theme.Sidebar
+            SwitchBtn.Position = UDim2.new(1, -45, 0.5, -9)
+            SwitchBtn.Size = UDim2.new(0, 34, 0, 18)
+            SwitchBtn.Text = ""
+            SwitchBtn.BorderSizePixel = 1
+            SwitchBtn.BorderColor3 = Theme.CardBorder
             
-            function Section:CreateToggle(tConfig)
-                local tName = tConfig.Name or "Toggle"
-                local tState = tConfig.Default or false
-                local tCallback = tConfig.Callback or function() end
-                
-                local Card = Instance.new("Frame")
-                Card.Parent = SecContainer
-                Card.BackgroundColor3 = Theme.CardBackground
-                Card.Size = UDim2.new(1, 0, 0, 44)
-                
-                local CardCorner = Instance.new("UICorner")
-                CardCorner.CornerRadius = UDim.new(0, 10)
-                CardCorner.Parent = Card
-                
-                local Label = Instance.new("TextLabel")
-                Label.Parent = Card
-                Label.BackgroundTransparency = 1
-                Label.Position = UDim2.new(0, 14, 0, 12)
-                Label.Size = UDim2.new(1, -75, 0, 20)
-                Label.Font = Theme.FontBold
-                Label.Text = tName
-                Label.TextColor3 = Theme.TextWhite
-                Label.TextSize = 14
-                Label.TextXAlignment = Enum.TextXAlignment.Left
-                
-                local SwitchBtn = Instance.new("TextButton")
-                SwitchBtn.Parent = Card
-                SwitchBtn.BackgroundColor3 = tState and Theme.AccentPurple or Color3.fromRGB(40, 35, 52)
-                SwitchBtn.Position = UDim2.new(1, -54, 0.5, -12)
-                SwitchBtn.Size = UDim2.new(0, 44, 0, 24)
-                SwitchBtn.Text = ""
-                
-                local SwitchCorner = Instance.new("UICorner")
-                SwitchCorner.CornerRadius = UDim.new(1, 0)
-                SwitchCorner.Parent = SwitchBtn
-                
-                local SwitchKnob = Instance.new("Frame")
-                SwitchKnob.Parent = SwitchBtn
-                SwitchKnob.BackgroundColor3 = Theme.TextWhite
-                SwitchKnob.Position = tState and UDim2.new(1, -21, 0.5, -9) or UDim2.new(0, 3, 0.5, -9)
-                SwitchKnob.Size = UDim2.new(0, 18, 0, 18)
-                
-                local KnobCorner = Instance.new("UICorner")
-                KnobCorner.CornerRadius = UDim.new(1, 0)
-                KnobCorner.Parent = SwitchKnob
-                
-                SwitchBtn.MouseButton1Click:Connect(function()
-                    tState = not tState
-                    if tState then
-                        SwitchKnob.Position = UDim2.new(1, -21, 0.5, -9)
-                        SwitchBtn.BackgroundColor3 = Theme.AccentPurple
-                    else
-                        SwitchKnob.Position = UDim2.new(0, 3, 0.5, -9)
-                        SwitchBtn.BackgroundColor3 = Color3.fromRGB(40, 35, 52)
-                    end
-                    tCallback(tState)
-                end)
+            local SwitchKnob = Instance.new("Frame")
+            SwitchKnob.Parent = SwitchBtn
+            SwitchKnob.BackgroundColor3 = Theme.TextWhite
+            SwitchKnob.Position = tState and UDim2.new(1, -16, 0.5, -7) or UDim2.new(0, 2, 0.5, -7)
+            SwitchKnob.Size = UDim2.new(0, 14, 0, 14)
+            SwitchKnob.BorderSizePixel = 0
+            
+            SwitchBtn.MouseButton1Click:Connect(function()
+                tState = not tState
+                if tState then
+                    SwitchKnob.Position = UDim2.new(1, -16, 0.5, -7)
+                    SwitchBtn.BackgroundColor3 = Theme.AccentGreen
+                else
+                    SwitchKnob.Position = UDim2.new(0, 2, 0.5, -7)
+                    SwitchBtn.BackgroundColor3 = Theme.Sidebar
+                end
+                tCallback(tState)
+            end)
+        end
+        
+        function Tab:CreateSlider(sConfig)
+            local sName = sConfig.Name or "Slider"
+            local sMin = sConfig.Min or 16
+            local sMax = sConfig.Max or 100
+            local sDefault = sConfig.Default or 16
+            local sCallback = sConfig.Callback or function() end
+            
+            local Card = Instance.new("Frame")
+            Card.Parent = TabContent
+            Card.BackgroundColor3 = Theme.CardBackground
+            Card.Size = UDim2.new(1, -6, 0, 55)
+            Card.BorderSizePixel = 1
+            Card.BorderColor3 = Theme.CardBorder
+            
+            local Label = Instance.new("TextLabel")
+            Label.Parent = Card
+            Label.BackgroundTransparency = 1
+            Label.Position = UDim2.new(0, 12, 0, 8)
+            Label.Size = UDim2.new(1, -24, 0, 14)
+            Label.Font = Theme.FontMedium
+            Label.Text = sName .. " - " .. tostring(sDefault)
+            Label.TextColor3 = Theme.TextWhite
+            Label.TextSize = 13
+            Label.TextXAlignment = Enum.TextXAlignment.Left
+            
+            local SliderBG = Instance.new("Frame")
+            SliderBG.Parent = Card
+            SliderBG.BackgroundColor3 = Theme.Sidebar
+            SliderBG.Position = UDim2.new(0, 12, 0, 32)
+            SliderBG.Size = UDim2.new(1, -24, 0, 6)
+            SliderBG.BorderSizePixel = 0
+            
+            local SliderFill = Instance.new("Frame")
+            SliderFill.Parent = SliderBG
+            SliderFill.BackgroundColor3 = Theme.AccentGreen
+            SliderFill.Size = UDim2.new((sDefault - sMin) / (sMax - sMin), 0, 1, 0)
+            SliderFill.BorderSizePixel = 0
+            
+            local SliderBtn = Instance.new("TextButton")
+            SliderBtn.Parent = SliderBG
+            SliderBtn.BackgroundTransparency = 1
+            SliderBtn.Size = UDim2.new(1, 0, 1, 0)
+            SliderBtn.Text = ""
+            
+            local dragging = false
+            local function updateSlider(input)
+                local pos = math.clamp((input.Position.X - SliderBG.AbsolutePosition.X) / SliderBG.AbsoluteSize.X, 0, 1)
+                SliderFill.Size = UDim2.new(pos, 0, 1, 0)
+                local val = math.floor(sMin + ((sMax - sMin) * pos))
+                Label.Text = sName .. " - " .. tostring(val)
+                sCallback(val)
             end
             
-            return Section
+            SliderBtn.InputBegan:Connect(function(input)
+                if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+                    dragging = true
+                    updateSlider(input)
+                end
+            end)
+            UserInputService.InputEnded:Connect(function(input)
+                if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+                    dragging = false
+                end
+            end)
+            UserInputService.InputChanged:Connect(function(input)
+                if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+                    updateSlider(input)
+                end
+            end)
         end
+        
         return Tab
     end
     return WindowObj
 end
 
 -- ==========================================
--- BACKEND LOGIC (PULL A SWORD)
+-- 🛠️ BACKEND LOGIC (LOCAL STATE & BYPASSES)
 -- ==========================================
-local Players = game:GetService("Players")
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local VirtualInputManager = game:GetService("VirtualInputManager")
-local LocalPlayer = Players.LocalPlayer
+local State = {
+    AutoCheat = false,
+    AutoSnack = false,
+    PlayerESP = false,
+    WalkSpeed = 16,
+    JumpPower = 50
+}
 
--- Anti-AFK
+-- Prevent AFK Kick
 LocalPlayer.Idled:Connect(function()
     game:GetService("VirtualUser"):CaptureController()
     game:GetService("VirtualUser"):ClickButton2(Vector2.new())
 end)
 
-local State = {
-    AutoTrain = false,
-    AutoPull = false,
-    AutoRebirth = false,
-    AutoHatch = false
-}
+-- Character Mod Loop (Speed / Jump)
+task.spawn(function()
+    RunService.RenderStepped:Connect(function()
+        local char = LocalPlayer.Character
+        if char and char:FindFirstChild("Humanoid") then
+            char.Humanoid.WalkSpeed = State.WalkSpeed
+            char.Humanoid.JumpPower = State.JumpPower
+        end
+    end)
+end)
+
+-- Simple ESP Logic
+local function CreateESP(player)
+    if player == LocalPlayer then return end
+    local highlight = Instance.new("Highlight")
+    highlight.Name = "TojiESP"
+    highlight.FillColor = Color3.fromRGB(200, 0, 0) -- Red for Danger (Teachers/Snitches)
+    highlight.FillTransparency = 0.5
+    highlight.OutlineColor = Color3.fromRGB(255, 255, 255)
+    
+    local function apply()
+        if player.Character then
+            highlight.Parent = player.Character
+        end
+    end
+    player.CharacterAdded:Connect(apply)
+    apply()
+    return highlight
+end
+
+task.spawn(function()
+    while task.wait(1) do
+        if State.PlayerESP then
+            for _, p in pairs(Players:GetPlayers()) do
+                if p ~= LocalPlayer and p.Character and not p.Character:FindFirstChild("TojiESP") then
+                    CreateESP(p)
+                end
+            end
+        else
+            for _, p in pairs(Players:GetPlayers()) do
+                if p.Character and p.Character:FindFirstChild("TojiESP") then
+                    p.Character.TojiESP:Destroy()
+                end
+            end
+        end
+    end
+end)
 
 -- ==========================================
--- SCRIPT UI GENERATION
+-- ⚙️ SCRIPT UI GENERATION
 -- ==========================================
-print("[DEBUG] Generating UI...")
 local Window = Library:CreateWindow({
-    Title = "Pull A Sword",
-    Icon = "⚔️",
-    Width = 500,
-    Height = 340
+    Title = "TOJI SCRIPTS - CHEATING"
 })
 
-local MainTab = Window:CreateTab("Main", "🏠")
-local FarmSection = MainTab:CreateSection("Auto Farming")
+local FarmTab = Window:CreateTab("Automation")
 
-FarmSection:CreateToggle({
-    Name = "Auto Train (Clicker)",
+FarmTab:CreateToggle({
+    Name = "Auto Cheat / Interact (Proximity)",
     Default = false,
-    Callback = function(state)
-        State.AutoTrain = state
-        if state then
+    Callback = function(val)
+        State.AutoCheat = val
+        if val then
             task.spawn(function()
-                while State.AutoTrain do
+                while State.AutoCheat do
                     pcall(function()
-                        local char = LocalPlayer.Character
-                        if char then
-                            local tool = LocalPlayer.Backpack:FindFirstChildOfClass("Tool") or char:FindFirstChildOfClass("Tool")
-                            if tool then
-                                if tool.Parent ~= char then tool.Parent = char end
-                                tool:Activate()
-                            end
-                        end
-                        for _, v in pairs(ReplicatedStorage:GetDescendants()) do
-                            if v:IsA("RemoteEvent") and (v.Name:lower():find("click") or v.Name:lower():find("train") or v.Name:lower():find("addstrength")) then
-                                v:FireServer()
-                            end
-                        end
-                    end)
-                    task.wait(0.01)
-                end
-            end)
-        end
-    end
-})
-
-FarmSection:CreateToggle({
-    Name = "Auto Pull Swords",
-    Default = false,
-    Callback = function(state)
-        State.AutoPull = state
-        if state then
-            task.spawn(function()
-                while State.AutoPull do
-                    pcall(function()
-                        for _, prompt in pairs(workspace:GetDescendants()) do
+                        for _, prompt in pairs(Workspace:GetDescendants()) do
                             if prompt:IsA("ProximityPrompt") then
-                                fireproximityprompt(prompt)
-                            end
-                        end
-                        for _, v in pairs(ReplicatedStorage:GetDescendants()) do
-                            if v:IsA("RemoteEvent") and (v.Name:lower():find("pull") or v.Name:lower():find("sword")) then
-                                v:FireServer()
-                            end
-                        end
-                    end)
-                    task.wait(0.1)
-                end
-            end)
-        end
-    end
-})
-
-FarmSection:CreateToggle({
-    Name = "Auto Rebirth",
-    Default = false,
-    Callback = function(state)
-        State.AutoRebirth = state
-        if state then
-            task.spawn(function()
-                while State.AutoRebirth do
-                    pcall(function()
-                        for _, v in pairs(ReplicatedStorage:GetDescendants()) do
-                            if v:IsA("RemoteEvent") and v.Name:lower():find("rebirth") then
-                                v:FireServer()
-                            end
-                        end
-                    end)
-                    task.wait(0.5)
-                end
-            end)
-        end
-    end
-})
-
-local PetsSection = MainTab:CreateSection("Pets & Eggs")
-
-PetsSection:CreateToggle({
-    Name = "Auto Hatch Eggs",
-    Default = false,
-    Callback = function(state)
-        State.AutoHatch = state
-        if state then
-            task.spawn(function()
-                while State.AutoHatch do
-                    pcall(function()
-                        for _, v in pairs(ReplicatedStorage:GetDescendants()) do
-                            if v:IsA("RemoteEvent") and (v.Name:lower():find("hatch") or v.Name:lower():find("open") or v.Name:lower():find("egg")) then
-                                pcall(function() v:FireServer("Basic") end)
-                                pcall(function() v:FireServer("Common") end)
-                                pcall(function() v:FireServer("Rare") end)
-                                pcall(function() v:FireServer("Epic") end)
-                                pcall(function() v:FireServer("Legendary") end)
+                                -- Only fire prompts that are close enough
+                                local char = LocalPlayer.Character
+                                if char and char:FindFirstChild("HumanoidRootPart") and prompt.Parent then
+                                    local dist = (char.HumanoidRootPart.Position - prompt.Parent.Position).Magnitude
+                                    if dist <= (prompt.MaxActivationDistance + 5) then
+                                        fireproximityprompt(prompt)
+                                    end
+                                end
                             end
                         end
                     end)
@@ -467,4 +438,60 @@ PetsSection:CreateToggle({
     end
 })
 
-print("[NOMII SCRIPTS] Pull A Sword (Nomii UI 1) Loaded Successfully!")
+FarmTab:CreateToggle({
+    Name = "Spam Buy Snacks (Money Required)",
+    Default = false,
+    Callback = function(val)
+        State.AutoSnack = val
+        if val then
+            task.spawn(function()
+                while State.AutoSnack do
+                    pcall(function()
+                        -- Generic brute-force for common shop remotes
+                        for _, v in pairs(game:GetService("ReplicatedStorage"):GetDescendants()) do
+                            if v:IsA("RemoteEvent") then
+                                local n = v.Name:lower()
+                                if n:find("buy") or n:find("purchase") or n:find("snack") or n:find("shop") then
+                                    v:FireServer()
+                                end
+                            end
+                        end
+                    end)
+                    task.wait(0.5)
+                end
+            end)
+        end
+    end
+})
+
+local PlayerTab = Window:CreateTab("Player Mod")
+
+PlayerTab:CreateToggle({
+    Name = "Player ESP (See through walls)",
+    Default = false,
+    Callback = function(val)
+        State.PlayerESP = val
+    end
+})
+
+PlayerTab:CreateSlider({
+    Name = "WalkSpeed",
+    Min = 16,
+    Max = 150,
+    Default = 16,
+    Callback = function(val)
+        State.WalkSpeed = val
+    end
+})
+
+PlayerTab:CreateSlider({
+    Name = "JumpPower",
+    Min = 50,
+    Max = 300,
+    Default = 50,
+    Callback = function(val)
+        State.JumpPower = val
+    end
+})
+
+print("[TOJI SCRIPTS] Successfully Injected!")
