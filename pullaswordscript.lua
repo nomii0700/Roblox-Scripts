@@ -4,24 +4,16 @@
 -- ============================================================
 
 -- ==========================================
+task.wait(2) -- Wait for game to fully load to prevent executor instant-crash
 print("[DEBUG] Script Started Executing...")
 -- NOMII UI LIBRARY (EMBEDDED)
 -- ==========================================
 local Library = {}
 
 local function GetUIContainer()
-    local player = game:GetService("Players").LocalPlayer
-    if player then 
-        local gui = player:FindFirstChild("PlayerGui")
-        if gui then return gui end
-    end
-    if gethui then
-        local ok, hui = pcall(gethui)
-        if ok and hui then return hui end
-    end
-    local success, coreGui = pcall(function() return game:GetService("CoreGui") end)
-    if success and coreGui then return coreGui end
-    return game:GetService("CoreGui")
+    local Players = game:GetService("Players")
+    local player = Players.LocalPlayer or Players.PlayerAdded:Wait()
+    return player:WaitForChild("PlayerGui")
 end
 
 print("[DEBUG] Fetching UI Container...")
