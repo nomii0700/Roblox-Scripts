@@ -324,31 +324,14 @@ end
 -- ==========================================
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local VirtualInputManager = game:GetService("VirtualInputManager")
 local LocalPlayer = Players.LocalPlayer
 
--- Smart Remote Cacher (Finds remotes dynamically)
-local CachedRemotes = {}
-local function FireDynamicRemote(possibleNames, ...)
-    for _, name in ipairs(possibleNames) do
-        local remote = CachedRemotes[name]
-        if not remote then
-            remote = ReplicatedStorage:FindFirstChild(name, true)
-            if remote and (remote:IsA("RemoteEvent") or remote:IsA("RemoteFunction")) then
-                CachedRemotes[name] = remote
-            end
-        end
-        
-        if remote then
-            if remote:IsA("RemoteEvent") then
-                remote:FireServer(...)
-            elseif remote:IsA("RemoteFunction") then
-                pcall(function() remote:InvokeServer(...) end)
-            end
-            return true -- Successfully fired
-        end
-    end
-    return false
-end
+-- Anti-AFK
+LocalPlayer.Idled:Connect(function()
+    game:GetService("VirtualUser"):CaptureController()
+    game:GetService("VirtualUser"):ClickButton2(Vector2.new())
+end)
 
 local State = {
     AutoTrain = false,
@@ -356,6 +339,34 @@ local State = {
     AutoPull = false,
     AutoHatch = false
 }
+
+-- Cached Remotes to prevent extreme lag from GetDescendants() in fast loops
+local CachedRemotes = {
+    Train = {},
+    Pull = {},
+    Fight = {},
+    Hatch = {}
+}
+
+task.spawn(function()
+    for _, v in pairs(ReplicatedStorage:GetDescendants()) do
+        if v:IsA("RemoteEvent") then
+            local name = v.Name:lower()
+            if name:find("click") or name:find("train") or name:find("addstrength") then
+                table.insert(CachedRemotes.Train, v)
+            end
+            if name:find("pull") or name:find("sword") then
+                table.insert(CachedRemotes.Pull, v)
+            end
+            if name:find("fight") or name:find("attack") or name:find("boss") or name:find("battle") then
+                table.insert(CachedRemotes.Fight, v)
+            end
+            if name:find("hatch") or name:find("open") or name:find("egg") then
+                table.insert(CachedRemotes.Hatch, v)
+            end
+        end
+    end
+end)
 
 -- ==========================================
 -- SCRIPT UI GENERATION
@@ -379,8 +390,19 @@ FarmSection:CreateToggle({
         if state then
             task.spawn(function()
                 while State.AutoTrain do
-                    -- Guessing common names for clicking
-                    FireDynamicRemote({"Click", "Train", "AddStrength", "Swing"})
+                    pcall(function()
+                        local char = LocalPlayer.Character
+                        if char then
+                            local tool = LocalPlayer.Backpack:FindFirstChildOfClass("Tool") or char:FindFirstChildOfClass("Tool")
+                            if tool then
+                                if tool.Parent ~= char then tool.Parent = char end
+                                tool:Activate()
+                            end
+                        end
+                        for _, remote in pairs(CachedRemotes.Train) do
+                            remote:FireServer()
+                        end
+                    end)
                     task.wait(0.01)
                 end
             end)
@@ -396,9 +418,17 @@ FarmSection:CreateToggle({
         if state then
             task.spawn(function()
                 while State.AutoPull do
-                    -- Guessing common names for pulling swords
-                    FireDynamicRemote({"Pull", "PullSword", "EquipSword", "Interact"})
-                    task.wait(1)
+                    pcall(function()
+                        for _, prompt in pairs(workspace:GetDescendants()) do
+                            if prompt:IsA("ProximityPrompt") then
+                                fireproximityprompt(prompt)
+                            end
+                        end
+                        for _, remote in pairs(CachedRemotes.Pull) do
+                            remote:FireServer()
+                        end
+                    end)
+                    task.wait(0.1)
                 end
             end)
         end
@@ -413,9 +443,18 @@ FarmSection:CreateToggle({
         if state then
             task.spawn(function()
                 while State.AutoFight do
-                    -- Guessing common names for fighting bosses
-                    FireDynamicRemote({"Fight", "Attack", "BossFight", "Damage"})
-                    task.wait(0.5)
+                    pcall(function()
+                        local char = LocalPlayer.Character
+                        if char then
+                            local weapon = LocalPlayer.Backpack:FindFirstChildOfClass("Tool") or char:FindFirstChildOfClass("Tool")
+                            if weapon and weapon.Parent ~= char then weapon.Parent = char end
+                            if weapon then weapon:Activate() end
+                        end
+                        for _, remote in pairs(CachedRemotes.Fight) do
+                            remote:FireServer()
+                        end
+                    end)
+                    task.wait(0.1)
                 end
             end)
         end
@@ -432,9 +471,12 @@ PetsSection:CreateToggle({
         if state then
             task.spawn(function()
                 while State.AutoHatch do
-                    -- Requires the exact egg name in reality, but this is a placeholder attempt
-                    FireDynamicRemote({"Hatch", "BuyEgg", "OpenEgg", "HatchEgg"}, "Basic Egg", 1)
-                    task.wait(2)
+                    pcall(function()
+                        for _, remote in pairs(CachedRemotes.Hatch) do
+                            remote:FireServer("Basic")
+                        end
+                    end)
+                    task.wait(0.2)
                 end
             end)
         end
