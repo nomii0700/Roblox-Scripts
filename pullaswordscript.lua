@@ -341,8 +341,8 @@ end)
 
 local State = {
     AutoTrain = false,
-    AutoFight = false,
     AutoPull = false,
+    AutoRebirth = false,
     AutoHatch = false
 }
 
@@ -418,27 +418,21 @@ FarmSection:CreateToggle({
 })
 
 FarmSection:CreateToggle({
-    Name = "Auto Fight",
+    Name = "Auto Rebirth",
     Default = false,
     Callback = function(state)
-        State.AutoFight = state
+        State.AutoRebirth = state
         if state then
             task.spawn(function()
-                while State.AutoFight do
+                while State.AutoRebirth do
                     pcall(function()
-                        local char = LocalPlayer.Character
-                        if char then
-                            local weapon = LocalPlayer.Backpack:FindFirstChildOfClass("Tool") or char:FindFirstChildOfClass("Tool")
-                            if weapon and weapon.Parent ~= char then weapon.Parent = char end
-                            if weapon then weapon:Activate() end
-                        end
                         for _, v in pairs(ReplicatedStorage:GetDescendants()) do
-                            if v:IsA("RemoteEvent") and (v.Name:lower():find("fight") or v.Name:lower():find("attack") or v.Name:lower():find("boss") or v.Name:lower():find("battle")) then
+                            if v:IsA("RemoteEvent") and v.Name:lower():find("rebirth") then
                                 v:FireServer()
                             end
                         end
                     end)
-                    task.wait(0.1)
+                    task.wait(0.5)
                 end
             end)
         end
@@ -458,7 +452,11 @@ PetsSection:CreateToggle({
                     pcall(function()
                         for _, v in pairs(ReplicatedStorage:GetDescendants()) do
                             if v:IsA("RemoteEvent") and (v.Name:lower():find("hatch") or v.Name:lower():find("open") or v.Name:lower():find("egg")) then
-                                v:FireServer("Basic")
+                                pcall(function() v:FireServer("Basic") end)
+                                pcall(function() v:FireServer("Common") end)
+                                pcall(function() v:FireServer("Rare") end)
+                                pcall(function() v:FireServer("Epic") end)
+                                pcall(function() v:FireServer("Legendary") end)
                             end
                         end
                     end)
