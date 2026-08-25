@@ -4,6 +4,7 @@
 -- ============================================================
 
 -- ==========================================
+print("[DEBUG] Script Started Executing...")
 -- NOMII UI LIBRARY (EMBEDDED)
 -- ==========================================
 local Library = {}
@@ -27,7 +28,9 @@ local function GetUIContainer()
     return game:GetService("CoreGui")
 end
 
+print("[DEBUG] Fetching UI Container...")
 local UIContainer = GetUIContainer()
+print("[DEBUG] UI Container Found:", tostring(UIContainer))
 local TweenService = game:GetService("TweenService")
 local UserInputService = game:GetService("UserInputService")
 
@@ -362,6 +365,7 @@ local State = {
 -- ==========================================
 -- SCRIPT UI GENERATION
 -- ==========================================
+print("[DEBUG] Generating UI...")
 local Window = Library:CreateWindow({
     Title = "Pull A Sword",
     Icon = "⚔️",
