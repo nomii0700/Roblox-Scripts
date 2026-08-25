@@ -10,21 +10,17 @@ print("[DEBUG] Script Started Executing...")
 local Library = {}
 
 local function GetUIContainer()
+    local player = game:GetService("Players").LocalPlayer
+    if player then 
+        local gui = player:FindFirstChild("PlayerGui")
+        if gui then return gui end
+    end
     if gethui then
         local ok, hui = pcall(gethui)
         if ok and hui then return hui end
     end
     local success, coreGui = pcall(function() return game:GetService("CoreGui") end)
-    if success and coreGui then
-        local testOk = pcall(function()
-            local test = Instance.new("ScreenGui")
-            test.Parent = coreGui
-            test:Destroy()
-        end)
-        if testOk then return coreGui end
-    end
-    local player = game:GetService("Players").LocalPlayer
-    if player then return player:WaitForChild("PlayerGui") end
+    if success and coreGui then return coreGui end
     return game:GetService("CoreGui")
 end
 
@@ -329,7 +325,6 @@ end
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local LocalPlayer = Players.LocalPlayer
-local getgenv = getgenv or function() return _G end
 
 -- Smart Remote Cacher (Finds remotes dynamically)
 local CachedRemotes = {}
